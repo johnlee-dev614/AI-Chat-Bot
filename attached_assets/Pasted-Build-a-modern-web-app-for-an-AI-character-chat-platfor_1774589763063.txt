@@ -1,0 +1,51 @@
+Build a modern web app for an AI character chat platform.
+The goal: Users come from my Instagram bio link and land on a polished homepage where they can browse multiple AI characters and start chatting with them. The visual style should feel sleek, premium, dark-mode-first, flirtatious but tasteful, and inspired by the polished feel of modern AI consumer products.
+Core requirements:
+* Create a landing page with a strong hero section, character previews, and clear call-to-action buttons
+* Create a character directory page that shows multiple AI models/cards with profile image, name, short personality description, tags, and online status
+* Create an individual character profile page with large avatar, bio, personality traits, example conversation starters, and a “Start Chat” button
+* Create a chat page with a modern two-panel layout on desktop and mobile-friendly layout on phone
+* Support multiple characters, each with separate system prompt/personality
+* Add a simple admin-friendly way to define characters in one config file or database table
+* Include sign up and login flow
+* Include age-gate screen before entry
+* Include a disclaimer that users are chatting with fictional AI characters
+* Save conversation history per logged-in user
+* Include a favorites system so users can favorite characters
+* Include search and filter for character types
+Design requirements:
+* Dark elegant UI
+* Smooth animations
+* Rounded cards
+* High-end typography
+* Responsive layout
+* Looks great for users coming from Instagram mobile browser
+* Homepage should feel premium and conversion-focused
+* Avoid a generic template look
+Tech requirements:
+* Use a modern web stack that Replit supports well
+* Prefer Next.js or React frontend with a simple backend/API
+* Use a database for users, characters, and chats
+* Organize code cleanly for future scaling
+* Prepare environment variable placeholders for AI API keys, database URL, auth secret, and storage keys
+* Make it easy to swap the AI model provider later
+AI behavior requirements:
+* Each character must have its own personality and writing style
+* Character definitions should be reusable and easy to edit
+* Separate system prompts from UI code
+* Add safety handling for disallowed requests and basic moderation controls
+* Keep the architecture ready for multiple AI providers later
+Pages to build now:
+* /
+* /characters
+* /characters/[slug]
+* /chat/[character]
+* /login
+* /signup
+* /account
+Important:
+* Build the MVP first with clean code and placeholder images
+* Use mock AI responses first if needed, but structure the code so real API integration can be added easily
+* Seed at least 6 example characters with different personalities
+* Do not overcomplicate billing or subscriptions yet
+* Focus on a beautiful, working MVP that can be deployed

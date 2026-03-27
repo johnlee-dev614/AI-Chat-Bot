@@ -1,0 +1,13 @@
+packages:
+  "framer-motion": "For smooth layout transitions and complex animations"
+  "zustand": "For global state management (age gate, disclaimer)"
+  "date-fns": "For date formatting in chat"
+  "clsx": "For conditional class names"
+  "tailwind-merge": "For merging tailwind classes safely"
+images:
+  - path: "artifacts/chat-app/public/images/hero-bg.png"
+    description: "Dark elegant abstract background with deep blacks and rich purple/violet glowing wisps, highly premium consumer tech aesthetic"
+    aspect_ratio: "16:9"
+notes:
+  - Uses generated API hooks from @workspace/api-client-react
+  - Uses useAuth from @workspace/replit-auth-web
