@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "AI Character Chat"
+title = "Sonuria"
 version = "1.0.0"
 id = "artifacts/chat-app"
 router = "path"
