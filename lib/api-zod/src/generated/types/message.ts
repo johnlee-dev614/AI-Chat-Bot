@@ -13,4 +13,9 @@ export interface Message {
   role: MessageRole;
   content: string;
   createdAt: Date;
+  /**
+   * Base64-encoded MP3 audio of the AI reply (only present on assistant messages from sendMessage)
+   * @nullable
+   */
+  audio?: string | null;
 }

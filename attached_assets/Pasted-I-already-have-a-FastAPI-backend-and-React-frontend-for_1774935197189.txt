@@ -1,0 +1,89 @@
+I already have a FastAPI backend and React frontend for an AI chat app. I want you to integrate and cleanly wire up my existing backend logic so that the chat works fully with Llama 3 (via OpenRouter) and ElevenLabs voice.
+
+IMPORTANT:
+
+* I have already added secrets in Replit
+* Use these environment variables:
+
+  * OPENROUTER_API_KEY
+  * ELEVENLABS_API_KEY
+  * VOICE_ID
+* Do NOT hardcode any API keys in the code
+* Always use os.getenv() to access them
+
+Current goal:
+Make the chat fully functional end-to-end:
+User message → Llama 3 response → ElevenLabs voice → frontend display + audio playback
+
+Backend requirements:
+
+1. Use FastAPI (build on my existing code, do not rewrite everything)
+
+2. Keep endpoints:
+
+   * /chat (text + voice)
+   * /voice (voice only)
+
+3. Chat flow:
+
+   * Accept message from GET or POST
+   * Maintain short conversation history (last 10 messages)
+   * Include SYSTEM_PROMPT for personality
+   * Call OpenRouter using:
+     model: meta-llama/llama-3-8b-instruct
+   * Extract AI response safely
+   * Append to history
+
+4. Voice integration:
+
+   * Send AI reply text to ElevenLabs
+   * Use VOICE_ID from environment variables
+   * Convert to speech
+   * Encode audio as base64
+   * Return it in response
+
+5. Response format:
+   Always return:
+   {
+   "text": "AI reply",
+   "audio": "base64 string (optional)"
+   }
+
+6. Error handling:
+
+   * If OpenRouter fails → return readable error
+   * If ElevenLabs fails → still return text
+   * Never crash
+
+7. Clean up issues in current code:
+
+   * Replace hardcoded API keys with os.getenv()
+   * Ensure environment variables are used correctly
+   * Improve structure and readability
+   * Avoid unsafe global state if possible
+   * Keep code modular and production-ready
+
+Frontend requirements:
+
+* Keep my existing React UI
+* Ensure it calls /chat correctly
+* Display AI response
+* Play audio if present
+* Do not break if audio is missing
+
+Important:
+
+* Do NOT redesign UI
+* Keep Sofia personality prompt intact
+* Keep responses short and conversational
+* Do not remove any working logic unless necessary
+
+Goal:
+Make my current app actually work using:
+
+* Llama 3 (OpenRouter)
+* ElevenLabs voice
+* Replit Secrets for API keys
+
+Here is my backend code:
+[PASTE YOUR CODE HERE]

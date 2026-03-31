@@ -540,6 +540,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        audio:
+          type: [string, 'null']
+          description: Base64-encoded MP3 audio of the AI reply (only present on assistant messages from sendMessage)
 
     SendMessageRequest:
       type: object

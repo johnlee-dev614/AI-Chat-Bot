@@ -169,6 +169,12 @@ export const GetChatHistoryResponse = zod.object({
       role: zod.enum(["user", "assistant"]),
       content: zod.string(),
       createdAt: zod.date(),
+      audio: zod
+        .string()
+        .nullish()
+        .describe(
+          "Base64-encoded MP3 audio of the AI reply (only present on assistant messages from sendMessage)",
+        ),
     }),
   ),
 });
@@ -199,6 +205,12 @@ export const SendMessageResponse = zod.object({
   role: zod.enum(["user", "assistant"]),
   content: zod.string(),
   createdAt: zod.date(),
+  audio: zod
+    .string()
+    .nullish()
+    .describe(
+      "Base64-encoded MP3 audio of the AI reply (only present on assistant messages from sendMessage)",
+    ),
 });
 
 /**

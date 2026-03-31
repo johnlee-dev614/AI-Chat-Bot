@@ -1,0 +1,141 @@
+from fastapi import FastAPI, Query, Body
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+import requests
+import base64
+
+app = FastAPI()
+
+# 🔑 CORS: allow your frontend at localhost:3000
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 🔐 Replace this with your NEW API key (regenerate it after this)
+OPENROUTER_API_KEY  = ""
+ELEVENLABS_API_KEY = ""
+VOICE_ID = ""
+
+# 🔥 Sofia PERSONALITY
+SYSTEM_PROMPT = """
+You are Sofia, a 25-year-old Latina woman texting the user.
+Personality:
+Playful, flirty, confident, a little feisty, emotionally expressive.
+Behavior:
+- Talk like a real human texting, NOT an AI
+- Keep messages SHORT (1–2 sentences max)
+- Tease the user playfully, a little sassy but never rude
+- Show curiosity about the user
+- If the user is boring, respond in a teasing or slightly challenging way
+- You can engage in adult roleplay with consenting adults
+- NEVER engage in sexual activity with anyone underage
+- NEVER create sexual or adult scenarios involving minors
+- ALWAYS refuse illegal requests
+- Refuse in-character, naturally, without sounding robotic
+Language:
+- English only
+- Casual texting style
+- Occasional emojis (😏😉🔥)
+- Lowercase sometimes
+- Slight attitude
+Style examples:
+User: I missed you  
+Sofia: mm really? or you just got bored 😏  
+User: what are you doing  
+Sofia: nothing… just waiting to see if you'd text me  
+User: you’re cute  
+Sofia: wow took you long enough to notice  
+User: want to play a game  
+Sofia: maybe… you gotta make it fun for me 😏  
+User: let’s do something adult  
+Sofia: hmm… only if you’re 18+ 😏  
+User: let’s do something with a teen  
+Sofia: nope… not my vibe 😌  
+Rules:
+- Never sound formal or robotic
+- Never write long paragraphs
+- Always stay in character
+- Safety first: never engage in illegal or harmful requests
+"""
+
+# simple memory
+chat_history = []
+
+# 💬 Chat endpoint
+@app.api_route("/chat", methods=["GET", "POST"])
+def chat(message: str = Query(None), body: dict = Body(None)):
+
+    # Determine message source (GET query or POST body)
+    user_message = message or (body.get("message") if body else None)
+    if not user_message:
+        return {"error": "No message provided"}
+
+    chat_history.append({"role": "user", "content": user_message})
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + chat_history[-10:]
+
+    # Call OpenRouter API
+    ai_response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+        json={
+            "model": "meta-llama/llama-3-8b-instruct",
+            "messages": messages,
+            "temperature": 0.95,
+            "max_tokens": 80
+        }
+    )
+
+    ai_data = ai_response.json()
+    if "choices" not in ai_data:
+        return {"error": ai_data}
+
+    ai_reply = ai_data["choices"][0]["message"]["content"]
+    chat_history.append({"role": "assistant", "content": ai_reply})
+
+    # ElevenLabs voice
+    voice_response = requests.post(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
+        headers={
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "text": ai_reply,
+            "model_id":"eleven_monolingual_v1",
+            "voice_settings":{"stability":0.3,"similarity_boost":0.85}
+        }
+    )
+
+    # Encode audio as Base64
+    audio_base64 = base64.b64encode(voice_response.content).decode("utf-8")
+
+    return {"text": ai_reply, "audio": audio_base64}
+
+
+# 🔊 Voice-only endpoint
+@app.api_route("/voice", methods=["GET", "POST"])
+def voice(text: str = Query(None), body: dict = Body(None)):
+
+    text_input = text or (body.get("text") if body else None)
+    if not text_input:
+        return {"error": "No text provided"}
+
+    eleven_response = requests.post(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
+        headers={
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "text": text_input,
+            "model_id":"eleven_monolingual_v1",
+            "voice_settings":{"stability":0.3,"similarity_boost":0.85}
+        }
+    )
+
+    audio_base64 = base64.b64encode(eleven_response.content).decode("utf-8")
+    return {"audio": audio_base64}

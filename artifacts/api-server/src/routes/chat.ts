@@ -12,6 +12,93 @@ import { getCharacterBySlug } from "../config/characters";
 
 const router: IRouter = Router();
 
+// ─── OpenRouter (Llama 3) ────────────────────────────────────────────────────
+
+async function callOpenRouter(
+  systemPrompt: string,
+  history: Array<{ role: string; content: string }>,
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+  ];
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : "https://localhost",
+    },
+    body: JSON.stringify({
+      model: "meta-llama/llama-3-8b-instruct",
+      messages,
+      temperature: 0.95,
+      max_tokens: 120,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenRouter error ${res.status}: ${errText}`);
+  }
+
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    error?: { message: string };
+  };
+
+  if (!data.choices?.[0]?.message?.content) {
+    throw new Error(data.error?.message ?? "No content in OpenRouter response");
+  }
+
+  return data.choices[0].message.content.trim();
+}
+
+// ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
+
+async function callElevenLabs(text: string): Promise<string | null> {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const voiceId = process.env.VOICE_ID;
+
+  if (!apiKey || !voiceId) {
+    return null; // Voice not configured — silently skip
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text,
+          model_id: "eleven_monolingual_v1",
+          voice_settings: { stability: 0.3, similarity_boost: 0.85 },
+        }),
+      },
+    );
+
+    if (!res.ok) return null;
+
+    const audioBuffer = await res.arrayBuffer();
+    return Buffer.from(audioBuffer).toString("base64");
+  } catch {
+    return null; // ElevenLabs failure is non-fatal
+  }
+}
+
+// ─── Routes ──────────────────────────────────────────────────────────────────
+
 router.get("/chat/:characterSlug/messages", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -31,8 +118,8 @@ router.get("/chat/:characterSlug/messages", async (req: Request, res: Response) 
     .where(
       and(
         eq(messagesTable.userId, req.user.id),
-        eq(messagesTable.characterSlug, characterSlug)
-      )
+        eq(messagesTable.characterSlug, characterSlug),
+      ),
     )
     .orderBy(asc(messagesTable.createdAt));
 
@@ -71,21 +158,31 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     createdAt: new Date(),
   });
 
-  // Get conversation history for context
+  // Get last 10 messages for context (excluding the one we just saved)
   const history = await db
     .select()
     .from(messagesTable)
     .where(
       and(
         eq(messagesTable.userId, req.user.id),
-        eq(messagesTable.characterSlug, characterSlug)
-      )
+        eq(messagesTable.characterSlug, characterSlug),
+      ),
     )
     .orderBy(asc(messagesTable.createdAt))
-    .limit(20);
+    .limit(10);
 
-  // Generate AI response (mock for now — swap provider here)
-  const aiContent = await generateAIResponse(character.systemPrompt, history, content);
+  // Generate AI reply via OpenRouter
+  let aiContent: string;
+  try {
+    aiContent = await callOpenRouter(character.systemPrompt, history);
+  } catch (err) {
+    req.log.error({ err }, "OpenRouter error");
+    res.status(502).json({ error: "AI service unavailable. Please try again." });
+    return;
+  }
+
+  // Generate voice via ElevenLabs (non-fatal if it fails)
+  const audioBase64 = await callElevenLabs(aiContent);
 
   // Save AI message
   const aiMsgId = randomUUID();
@@ -105,6 +202,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     role: "assistant" as const,
     content: aiContent,
     createdAt: now.toISOString(),
+    audio: audioBase64,
   };
 
   res.json(SendMessageResponse.parse(aiMessage));
@@ -123,53 +221,11 @@ router.delete("/chat/:characterSlug/messages/clear", async (req: Request, res: R
     .where(
       and(
         eq(messagesTable.userId, req.user.id),
-        eq(messagesTable.characterSlug, characterSlug)
-      )
+        eq(messagesTable.characterSlug, characterSlug),
+      ),
     );
 
   res.json(ClearChatHistoryResponse.parse({ success: true }));
 });
-
-// AI response generation — mock implementation
-// Replace this function body to swap providers (OpenAI, Anthropic, etc.)
-async function generateAIResponse(
-  systemPrompt: string,
-  history: Array<{ role: string; content: string }>,
-  userMessage: string
-): Promise<string> {
-  // Check for content moderation flags
-  const blockedTerms = ["illegal", "harm", "violence"];
-  const lowerMsg = userMessage.toLowerCase();
-  if (blockedTerms.some((term) => lowerMsg.includes(term))) {
-    return "I'd rather we talk about something else. What else is on your mind?";
-  }
-
-  // TODO: Replace with real AI provider
-  // Example OpenAI integration:
-  // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  // const response = await openai.chat.completions.create({
-  //   model: "gpt-4o",
-  //   messages: [
-  //     { role: "system", content: systemPrompt },
-  //     ...history.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
-  //     { role: "user", content: userMessage }
-  //   ],
-  //   max_tokens: 300,
-  // });
-  // return response.choices[0].message.content ?? "...";
-
-  // Mock responses for MVP
-  const mockResponses = [
-    "That's a fascinating thought... Tell me more about what you mean by that.",
-    "I've been thinking about something similar recently. It's funny how the universe works sometimes.",
-    "You know, most people never think to ask that. I like the way your mind works.",
-    "Hmm, let me sit with that for a moment... I think what you're really asking is something deeper.",
-    "Every time we talk, you surprise me. I mean that genuinely.",
-    "There's something about the way you said that... it really resonates with me.",
-  ];
-
-  const idx = Math.floor(Math.random() * mockResponses.length);
-  return mockResponses[idx];
-}
 
 export default router;
