@@ -201,7 +201,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     characterSlug,
     role: "assistant" as const,
     content: aiContent,
-    createdAt: now.toISOString(),
+    createdAt: now,   // Date object — Zod schema uses useDates:true, stringify handles serialization
     audio: audioBase64,
   };
 

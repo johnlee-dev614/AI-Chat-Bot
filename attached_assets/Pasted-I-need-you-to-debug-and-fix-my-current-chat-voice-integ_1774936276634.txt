@@ -1,0 +1,74 @@
+I need you to debug and fix my current chat + voice integration.
+
+Current situation:
+
+* Text chat sometimes works
+* I am getting intermittent HTTP 500 errors
+* One error includes a ZodError with "expected date, received string"
+* I also want to make sure ElevenLabs voice is fully integrated using my Replit secrets
+
+Important:
+
+* I already added these secrets in Replit:
+
+  * OPENROUTER_API_KEY
+  * ELEVENLABS_API_KEY
+  * VOICE_ID
+* Do NOT hardcode any API keys
+* Always use environment variables
+
+What I need you to do:
+
+1. Verify environment variable usage
+
+* Confirm OPENROUTER_API_KEY is being used correctly
+* Confirm ELEVENLABS_API_KEY is being used correctly
+* Confirm VOICE_ID is being used correctly
+* If the voice API key is missing from the current code path, add it properly
+
+2. Debug the HTTP 500 error
+
+* Find the exact source of the ZodError
+* Identify which schema expects a date but is receiving a string
+* Fix the validation issue safely
+* If the field should be a string, update the schema
+* If the field should be a date, parse/transform it correctly before validation
+* Make sure this no longer crashes the chat flow
+
+3. Keep voice integration working
+
+* After AI text is returned, send it to ElevenLabs
+* Use ELEVENLABS_API_KEY and VOICE_ID from Replit secrets
+* Return audio as base64
+* If ElevenLabs fails, still return text and do not crash
+
+4. Add better error handling
+
+* Log the real error source clearly
+* Do not return a generic 500 without context
+* Make the /chat endpoint resilient even if voice fails
+* Make validation errors readable and fixable
+
+5. Test the full flow
+   Please verify each step:
+
+* frontend sends message
+* backend receives message
+* OpenRouter returns text
+* ElevenLabs returns audio
+* backend returns text and optional audio
+* frontend displays text
+* frontend plays audio if present
+
+6. Preserve current behavior
+
+* Do not redesign the UI
+* Keep the current chat flow intact
+* Only fix the broken integration and validation issues
+
+At the end, tell me:
+
+* what caused the 500
+* whether the voice API key and voice ID are correctly integrated
+* exactly what files you changed
+* whether voice is now optional and non-blocking
