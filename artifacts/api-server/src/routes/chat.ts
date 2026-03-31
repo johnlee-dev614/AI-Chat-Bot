@@ -12,11 +12,16 @@ import { getCharacterBySlug } from "../config/characters";
 
 const router: IRouter = Router();
 
+// ─── Shared logger type ──────────────────────────────────────────────────────
+
+type PinoLog = { info: (o: object, msg: string) => void; warn: (o: object, msg: string) => void; error: (o: object, msg: string) => void };
+
 // ─── OpenRouter (Llama 3) ────────────────────────────────────────────────────
 
 async function callOpenRouter(
   systemPrompt: string,
   history: Array<{ role: string; content: string }>,
+  log: PinoLog,
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
@@ -26,6 +31,9 @@ async function callOpenRouter(
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
   ];
 
+  const model = "meta-llama/llama-3.1-8b-instruct:free";
+  log.info({ model, msgCount: messages.length }, "OpenRouter: sending request");
+
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -34,9 +42,10 @@ async function callOpenRouter(
       "HTTP-Referer": process.env.REPLIT_DEV_DOMAIN
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : "https://localhost",
+      "X-Title": "Sonuria",
     },
     body: JSON.stringify({
-      model: "meta-llama/llama-3-8b-instruct",
+      model,
       messages,
       temperature: 0.95,
       max_tokens: 120,
@@ -45,24 +54,27 @@ async function callOpenRouter(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`OpenRouter error ${res.status}: ${errText}`);
+    log.error({ status: res.status, body: errText }, "OpenRouter: HTTP error");
+    throw new Error(`OpenRouter HTTP ${res.status}: ${errText}`);
   }
 
   const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-    error?: { message: string };
+    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+    error?: { message: string; code?: number };
   };
 
-  if (!data.choices?.[0]?.message?.content) {
-    throw new Error(data.error?.message ?? "No content in OpenRouter response");
+  log.info({ hasChoices: !!data.choices?.length, errorMsg: data.error?.message }, "OpenRouter: response received");
+
+  const content = data.choices?.[0]?.message?.content?.trim();
+  if (!content) {
+    const reason = data.error?.message ?? `empty content — raw: ${JSON.stringify(data).slice(0, 300)}`;
+    throw new Error(`OpenRouter: ${reason}`);
   }
 
-  return data.choices[0].message.content.trim();
+  return content;
 }
 
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
-
-type PinoLog = { info: (o: object, msg: string) => void; warn: (o: object, msg: string) => void; error: (o: object, msg: string) => void };
 
 async function callElevenLabs(text: string, log: PinoLog): Promise<string | null> {
   const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
@@ -191,7 +203,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
   // Generate AI reply via OpenRouter
   let aiContent: string;
   try {
-    aiContent = await callOpenRouter(character.systemPrompt, history);
+    aiContent = await callOpenRouter(character.systemPrompt, history, req.log);
   } catch (err) {
     req.log.error({ err }, "OpenRouter error");
     res.status(502).json({ error: "AI service unavailable. Please try again." });
