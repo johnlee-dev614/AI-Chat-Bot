@@ -1,0 +1,137 @@
+I need you to debug and fix my voice chat functionality. The UI toggle for voice is ON, text responses are working, but no audio is playing.
+
+IMPORTANT:
+
+* I already added these secrets in Replit:
+
+  * ELEVENLABS_API_KEY
+  * VOICE_API_KEY
+  * VOICE_ID
+* Do NOT hardcode any API keys
+* Always use environment variables
+
+---
+
+## PROBLEM:
+
+* Chat returns text successfully
+* Voice toggle is ON in the frontend
+* No audio is playing
+* I suspect the voice API key is not being used correctly or the ElevenLabs request is failing silently
+
+---
+
+## TASKS:
+
+1. VERIFY API KEY USAGE
+
+* Ensure the ElevenLabs request is using:
+
+  * ELEVENLABS_API_KEY OR VOICE_API_KEY
+* Implement fallback logic:
+
+  * use ELEVENLABS_API_KEY if available
+  * otherwise use VOICE_API_KEY
+
+Example:
+const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY
+
+* Ensure VOICE_ID is correctly used in the endpoint URL
+
+---
+
+2. DEBUG ELEVENLABS REQUEST
+
+---
+
+* Check if the request to ElevenLabs is:
+  https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}
+
+* Verify:
+
+  * correct headers (xi-api-key)
+  * correct body format
+  * valid response
+
+* Log:
+
+  * status code
+  * response errors if any
+
+---
+
+3. VERIFY AUDIO PIPELINE
+
+---
+
+* Confirm backend returns:
+  {
+  "text": "...",
+  "audio": "base64 string"
+  }
+
+* Ensure audio is:
+
+  * not empty
+  * correctly base64 encoded
+
+---
+
+4. DEBUG FRONTEND AUDIO PLAYBACK
+
+---
+
+* Confirm frontend:
+
+  * receives audio
+  * decodes base64 correctly
+  * creates Blob properly
+  * calls audio.play()
+
+* Add console logs:
+
+  * when audio is received
+  * when playback starts
+  * if playback fails
+
+---
+
+5. HANDLE FAILURES SAFELY
+
+---
+
+* If ElevenLabs fails:
+
+  * log error clearly
+  * return text anyway
+  * do NOT crash
+
+---
+
+6. VERIFY FULL FLOW
+
+---
+
+Test and confirm:
+
+1. user sends message
+2. backend gets message
+3. AI generates text
+4. ElevenLabs generates audio
+5. backend returns audio
+6. frontend receives audio
+7. audio plays
+
+---
+
+7. OUTPUT
+
+---
+
+Tell me:
+
+* whether ELEVENLABS_API_KEY or VOICE_API_KEY was missing or unused
+* whether ElevenLabs request was failing and why
+* whether VOICE_ID is valid and being used correctly
+* exactly what was broken
+* what you changed to fix it

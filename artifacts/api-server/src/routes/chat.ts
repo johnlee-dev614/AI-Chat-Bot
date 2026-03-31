@@ -63,12 +63,20 @@ async function callOpenRouter(
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
 
 async function callElevenLabs(text: string): Promise<string | null> {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
   const voiceId = process.env.VOICE_ID;
 
-  if (!apiKey || !voiceId) {
-    return null; // Voice not configured — silently skip
+  if (!apiKey) {
+    console.warn("[ElevenLabs] No API key found — set ELEVENLABS_API_KEY or VOICE_API_KEY");
+    return null;
   }
+  if (!voiceId) {
+    console.warn("[ElevenLabs] VOICE_ID is not set");
+    return null;
+  }
+
+  const usingKey = process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY";
+  console.log(`[ElevenLabs] Requesting TTS — voice: ${voiceId}, key: ${usingKey}`);
 
   try {
     const res = await fetch(
@@ -88,12 +96,19 @@ async function callElevenLabs(text: string): Promise<string | null> {
       },
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "(unreadable)");
+      console.error(`[ElevenLabs] HTTP ${res.status} error: ${errBody}`);
+      return null;
+    }
 
     const audioBuffer = await res.arrayBuffer();
-    return Buffer.from(audioBuffer).toString("base64");
-  } catch {
-    return null; // ElevenLabs failure is non-fatal
+    const base64 = Buffer.from(audioBuffer).toString("base64");
+    console.log(`[ElevenLabs] Audio generated — ${base64.length} base64 chars`);
+    return base64;
+  } catch (err) {
+    console.error("[ElevenLabs] Request failed:", err);
+    return null;
   }
 }
 
@@ -183,6 +198,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
 
   // Generate voice via ElevenLabs (non-fatal if it fails)
   const audioBase64 = await callElevenLabs(aiContent);
+  req.log.info({ hasAudio: !!audioBase64 }, "ElevenLabs result");
 
   // Save AI message
   const aiMsgId = randomUUID();

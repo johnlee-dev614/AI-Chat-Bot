@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 // Play base64-encoded mp3 audio
 function playAudioBase64(base64: string) {
   try {
+    console.log("[Audio] Decoding base64 audio —", base64.length, "chars");
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -26,9 +27,15 @@ function playAudioBase64(base64: string) {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audio.onended = () => URL.revokeObjectURL(url);
-    audio.play().catch(() => {/* autoplay blocked */});
+    console.log("[Audio] Starting playback...");
+    audio.play().then(() => {
+      console.log("[Audio] Playback started successfully");
+    }).catch((err) => {
+      console.error("[Audio] Playback failed:", err);
+    });
     return audio;
-  } catch {
+  } catch (err) {
+    console.error("[Audio] Failed to decode or create audio:", err);
     return null;
   }
 }
@@ -52,12 +59,15 @@ export function ChatView() {
   const sendMessage = useSendMessage({
     mutation: {
       onSuccess: (data) => {
+        console.log("[Chat] Response received — hasAudio:", !!data.audio, "| voiceEnabled:", voiceEnabled, "| audioLength:", data.audio?.length ?? 0);
         // Play audio if present and voice is enabled
         if (voiceEnabled && data.audio) {
           if (currentAudioRef.current) {
             currentAudioRef.current.pause();
           }
           currentAudioRef.current = playAudioBase64(data.audio);
+        } else if (voiceEnabled && !data.audio) {
+          console.warn("[Chat] Voice is ON but no audio returned from server");
         }
         // Clear optimistic messages and refresh history
         setOptimisticMessages([]);
