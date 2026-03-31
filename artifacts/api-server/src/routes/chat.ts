@@ -62,21 +62,23 @@ async function callOpenRouter(
 
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
 
-async function callElevenLabs(text: string): Promise<string | null> {
+type PinoLog = { info: (o: object, msg: string) => void; warn: (o: object, msg: string) => void; error: (o: object, msg: string) => void };
+
+async function callElevenLabs(text: string, log: PinoLog): Promise<string | null> {
   const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
   const voiceId = process.env.VOICE_ID;
 
   if (!apiKey) {
-    console.warn("[ElevenLabs] No API key found — set ELEVENLABS_API_KEY or VOICE_API_KEY");
+    log.warn({ keysChecked: ["ELEVENLABS_API_KEY", "VOICE_API_KEY"] }, "ElevenLabs: no API key found");
     return null;
   }
   if (!voiceId) {
-    console.warn("[ElevenLabs] VOICE_ID is not set");
+    log.warn({}, "ElevenLabs: VOICE_ID env var not set");
     return null;
   }
 
   const usingKey = process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY";
-  console.log(`[ElevenLabs] Requesting TTS — voice: ${voiceId}, key: ${usingKey}`);
+  log.info({ voiceId, usingKey }, "ElevenLabs: sending TTS request");
 
   try {
     const res = await fetch(
@@ -98,16 +100,16 @@ async function callElevenLabs(text: string): Promise<string | null> {
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "(unreadable)");
-      console.error(`[ElevenLabs] HTTP ${res.status} error: ${errBody}`);
+      log.error({ status: res.status, body: errBody }, "ElevenLabs: HTTP error");
       return null;
     }
 
     const audioBuffer = await res.arrayBuffer();
     const base64 = Buffer.from(audioBuffer).toString("base64");
-    console.log(`[ElevenLabs] Audio generated — ${base64.length} base64 chars`);
+    log.info({ base64Len: base64.length }, "ElevenLabs: audio generated");
     return base64;
   } catch (err) {
-    console.error("[ElevenLabs] Request failed:", err);
+    log.error({ err }, "ElevenLabs: request threw");
     return null;
   }
 }
@@ -197,7 +199,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
   }
 
   // Generate voice via ElevenLabs (non-fatal if it fails)
-  const audioBase64 = await callElevenLabs(aiContent);
+  const audioBase64 = await callElevenLabs(aiContent, req.log);
   req.log.info({ hasAudio: !!audioBase64 }, "ElevenLabs result");
 
   // Save AI message
@@ -242,6 +244,67 @@ router.delete("/chat/:characterSlug/messages/clear", async (req: Request, res: R
     );
 
   res.json(ClearChatHistoryResponse.parse({ success: true }));
+});
+
+// ─── Voice Health Check (debug) ─────────────────────────────────────────────
+// GET /api/voice/health — tests ElevenLabs connectivity and returns status JSON
+
+router.get("/voice/health", async (req: Request, res: Response) => {
+  const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
+  const voiceId = process.env.VOICE_ID;
+
+  if (!apiKey || !voiceId) {
+    res.json({
+      ok: false,
+      reason: !apiKey ? "missing API key (ELEVENLABS_API_KEY or VOICE_API_KEY)" : "missing VOICE_ID",
+      hasElevenLabsKey: !!process.env.ELEVENLABS_API_KEY,
+      hasVoiceApiKey: !!process.env.VOICE_API_KEY,
+      hasVoiceId: !!voiceId,
+    });
+    return;
+  }
+
+  try {
+    const testRes = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text: "test",
+          model_id: "eleven_monolingual_v1",
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+        }),
+      },
+    );
+
+    if (!testRes.ok) {
+      const body = await testRes.text().catch(() => "(unreadable)");
+      req.log.error({ status: testRes.status, body }, "ElevenLabs health check failed");
+      res.json({
+        ok: false,
+        httpStatus: testRes.status,
+        error: body,
+        usingKey: process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY",
+        voiceId,
+      });
+      return;
+    }
+
+    const buf = await testRes.arrayBuffer();
+    res.json({
+      ok: true,
+      audioBytes: buf.byteLength,
+      usingKey: process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY",
+      voiceId,
+    });
+  } catch (err) {
+    res.json({ ok: false, error: String(err) });
+  }
 });
 
 export default router;
