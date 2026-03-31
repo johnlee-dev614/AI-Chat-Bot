@@ -18,6 +18,17 @@ type PinoLog = { info: (o: object, msg: string) => void; warn: (o: object, msg: 
 
 // ─── OpenRouter (Llama 3) ────────────────────────────────────────────────────
 
+// Working models first, then others as fallback when they recover from rate limits
+const OPENROUTER_MODELS = [
+  "openrouter/free",                            // OpenRouter auto-routes to best available free model
+  "google/gemma-3-4b-it:free",                 // Confirmed working
+  "google/gemma-3-12b-it:free",
+  "google/gemma-3-27b-it:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "meta-llama/llama-3.2-3b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+];
+
 async function callOpenRouter(
   systemPrompt: string,
   history: Array<{ role: string; content: string }>,
@@ -31,47 +42,65 @@ async function callOpenRouter(
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
   ];
 
-  const model = "meta-llama/llama-3.1-8b-instruct:free";
-  log.info({ model, msgCount: messages.length }, "OpenRouter: sending request");
-
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : "https://localhost",
-      "X-Title": "Sonuria",
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.95,
-      max_tokens: 120,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    log.error({ status: res.status, body: errText }, "OpenRouter: HTTP error");
-    throw new Error(`OpenRouter HTTP ${res.status}: ${errText}`);
-  }
-
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
-    error?: { message: string; code?: number };
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+    "HTTP-Referer": process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "https://localhost",
+    "X-Title": "Sonuria",
   };
 
-  log.info({ hasChoices: !!data.choices?.length, errorMsg: data.error?.message }, "OpenRouter: response received");
+  const errors: string[] = [];
 
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) {
-    const reason = data.error?.message ?? `empty content — raw: ${JSON.stringify(data).slice(0, 300)}`;
-    throw new Error(`OpenRouter: ${reason}`);
+  for (const model of OPENROUTER_MODELS) {
+    log.info({ model }, "OpenRouter: trying model");
+
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ model, messages, temperature: 0.95, max_tokens: 120 }),
+      });
+
+      const rawText = await res.text();
+
+      // Non-2xx → skip to next model
+      if (!res.ok) {
+        log.warn({ model, status: res.status, body: rawText.slice(0, 200) }, "OpenRouter: model failed, trying next");
+        errors.push(`${model} → HTTP ${res.status}`);
+        continue;
+      }
+
+      const data = JSON.parse(rawText) as {
+        choices?: Array<{ message?: { content?: string } }>;
+        error?: { message: string; code?: number };
+      };
+
+      // 200 but error body (e.g. rate-limit wrapped in 200) → skip
+      if (data.error) {
+        log.warn({ model, errCode: data.error.code, errMsg: data.error.message }, "OpenRouter: model error body, trying next");
+        errors.push(`${model} → ${data.error.message}`);
+        continue;
+      }
+
+      const content = data.choices?.[0]?.message?.content?.trim();
+      if (!content) {
+        log.warn({ model, raw: rawText.slice(0, 200) }, "OpenRouter: empty content, trying next");
+        errors.push(`${model} → empty content`);
+        continue;
+      }
+
+      log.info({ model }, "OpenRouter: success");
+      return content;
+
+    } catch (err) {
+      log.warn({ model, err }, "OpenRouter: fetch threw, trying next");
+      errors.push(`${model} → ${String(err)}`);
+    }
   }
 
-  return content;
+  throw new Error(`All OpenRouter models failed: ${errors.join(" | ")}`);
 }
 
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
