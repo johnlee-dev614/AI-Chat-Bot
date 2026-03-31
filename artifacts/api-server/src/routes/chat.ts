@@ -92,7 +92,7 @@ async function callElevenLabs(text: string, log: PinoLog): Promise<string | null
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_turbo_v2_5",
           voice_settings: { stability: 0.3, similarity_boost: 0.85 },
         }),
       },
@@ -276,7 +276,7 @@ router.get("/voice/health", async (req: Request, res: Response) => {
         },
         body: JSON.stringify({
           text: "test",
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_turbo_v2_5",
           voice_settings: { stability: 0.5, similarity_boost: 0.75 },
         }),
       },
