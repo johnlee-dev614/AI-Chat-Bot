@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sparkles, User, LogOut, Menu, X } from "lucide-react";
+import { Moon, User, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useState, useEffect } from "react";
@@ -27,18 +27,18 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b",
+          "fixed top-0 inset-x-0 z-50 transition-all duration-500 border-b",
           scrolled
-            ? "bg-background/80 backdrop-blur-xl border-white/10 py-3 shadow-lg"
+            ? "bg-background/75 backdrop-blur-2xl border-white/[0.06] py-3 shadow-xl shadow-black/30"
             : "bg-transparent border-transparent py-5"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_0_15px_rgba(147,51,234,0.3)] group-hover:shadow-[0_0_25px_rgba(147,51,234,0.6)] transition-all">
-              <Sparkles className="w-5 h-5 text-white" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/80 to-accent/80 flex items-center justify-center shadow-[0_0_20px_rgba(180,80,120,0.25)] group-hover:shadow-[0_0_30px_rgba(180,80,120,0.45)] transition-all duration-500">
+              <Moon className="w-4 h-4 text-white" />
             </div>
-            <span className="font-display font-bold text-xl tracking-tight text-white">Lumina</span>
+            <span className="font-display font-semibold text-xl tracking-wide text-white/90 italic">Sonuria</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -48,7 +48,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-white",
+                  "text-sm font-light tracking-wide transition-colors duration-300 hover:text-white",
                   location === link.href ? "text-white" : "text-muted-foreground"
                 )}
               >
@@ -60,7 +60,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
-                <Link href="/account" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-white transition-colors">
+                <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors duration-300">
                   {user?.profileImageUrl ? (
                     <img src={user.profileImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-white/10" />
                   ) : (
@@ -68,22 +68,22 @@ export function Navbar() {
                       <User className="w-4 h-4" />
                     </div>
                   )}
-                  {user?.firstName || "Account"}
+                  <span className="font-light">{user?.firstName || "Account"}</span>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={logout} title="Log out">
                   <LogOut className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </div>
             ) : (
-              <Button variant="glow" onClick={login}>
+              <Button variant="glow" onClick={login} className="font-light tracking-wide">
                 Sign In
               </Button>
             )}
           </div>
 
           {/* Mobile Menu Toggle */}
-          <button 
-            className="md:hidden p-2 text-white"
+          <button
+            className="md:hidden p-2 text-white/70 hover:text-white transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X /> : <Menu />}
@@ -95,10 +95,11 @@ export function Navbar() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-background/95 backdrop-blur-3xl pt-24 px-4 pb-6 flex flex-col md:hidden"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-background/97 backdrop-blur-3xl pt-24 px-4 pb-6 flex flex-col md:hidden"
           >
             <div className="flex flex-col gap-6 text-center text-lg">
               {navLinks.map((link) => (
@@ -107,20 +108,22 @@ export function Navbar() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "font-display font-medium p-4 rounded-xl transition-colors",
-                    location === link.href ? "bg-white/10 text-white" : "text-muted-foreground"
+                    "font-display italic font-medium p-4 rounded-2xl transition-all duration-300",
+                    location === link.href
+                      ? "bg-primary/10 text-white border border-primary/20"
+                      : "text-muted-foreground hover:bg-white/5"
                   )}
                 >
                   {link.label}
                 </Link>
               ))}
-              <div className="h-px w-full bg-white/10 my-2" />
+              <div className="h-px w-full bg-white/[0.06] my-2" />
               {isAuthenticated ? (
-                <Button variant="outline" className="w-full" onClick={() => { setMobileMenuOpen(false); logout(); }}>
+                <Button variant="outline" className="w-full font-light" onClick={() => { setMobileMenuOpen(false); logout(); }}>
                   Log Out
                 </Button>
               ) : (
-                <Button variant="glow" className="w-full" onClick={() => { setMobileMenuOpen(false); login(); }}>
+                <Button variant="glow" className="w-full font-light" onClick={() => { setMobileMenuOpen(false); login(); }}>
                   Sign In
                 </Button>
               )}
