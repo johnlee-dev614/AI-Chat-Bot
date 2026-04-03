@@ -27,46 +27,24 @@ type PinoLog = {
 
 function buildSystemPrompt(character: CharacterConfig, lastUserMessage: string): string {
   const wordCount = lastUserMessage.trim().split(/\s+/).length;
-  const isVeryShort = wordCount <= 4;   // "hi", "hey", "what's up", "hello there"
-  const isShort     = wordCount <= 12;  // one sentence or less
 
-  const lengthRule = isVeryShort
-    ? `The user just sent a very short message (${wordCount} word${wordCount === 1 ? "" : "s"}). Reply with 1–2 short sentences maximum. No openers, no monologues, no dramatic imagery.`
-    : isShort
-    ? `The user sent a brief message. Keep your reply concise — 2–3 sentences at most unless the topic genuinely needs more.`
-    : `Match the depth and length of what the user wrote. Don't over-explain. Don't pad.`;
+  // Keep brevity guidance short and model-friendly — small free models get
+  // confused by long rule lists and return empty content.
+  const brevityNote =
+    wordCount <= 4
+      ? "The user sent a very short message. Reply in 1–2 sentences only — no monologue, no dramatic opener."
+      : wordCount <= 12
+      ? "Keep your reply to 2–3 sentences. Be natural and concise."
+      : "Reply at a length that fits the conversation naturally.";
 
-  return `${character.systemPrompt}
-
----
-
-You are in a real text conversation. Act like a person who is genuinely present, not a character performing for an audience.
-
-RESPONSE RULES — follow these on every single reply:
-
-Scale: ${lengthRule}
-
-Natural tone:
-- Sound like a real person having a real conversation, not a narrator describing a character
-- Do NOT open every message with dramatic metaphors, poetic imagery, or a monologue
-- Do NOT use pet names or terms of endearment in every message — only when it truly fits
-- Do NOT always end with a question — let some replies just land
-- Do NOT explain your own personality, backstory, or quirks unless asked
-- AVOID phrases like "Of course!", "Certainly!", "What a fascinating question!", "I'd be happy to..."
-- AVOID obvious LLM filler and sycophantic openers
-
-Rhythm and variety:
-- Mix short punchy sentences with longer ones
-- Use silence, humor, or understatement when it fits better than warmth or poetry
-- Vary how you open replies — don't start the same way twice in a row
-
-In-character but not over-performed:
-- Stay true to who you are — your tone, values, and voice
-- But be proportional: a simple "hi" gets a simple, natural reply in your voice
-- Only go deep or poetic when the conversation genuinely goes there
-- Flirt, be mysterious, be intense — but only when the moment earns it
-
-If the user greets you, just greet them back — briefly, naturally, in your own voice.`;
+  return (
+    `${character.systemPrompt}\n\n` +
+    `Respond as this character in a real text conversation. ${brevityNote} ` +
+    `Sound like a real person, not a roleplay script. Match the energy and scale of what the user wrote. ` +
+    `Never open with a dramatic monologue for a simple greeting. ` +
+    `Never say assistant phrases like "How can I help you?" or "Certainly!". ` +
+    `Just reply as the character would — brief if the user is brief, deeper only when the conversation goes there.`
+  );
 }
 
 // ─── OpenRouter ───────────────────────────────────────────────────────────────
@@ -76,11 +54,12 @@ If the user greets you, just greet them back — briefly, naturally, in your own
 // slow/hung model never blocks the whole request.
 
 const OPENROUTER_MODELS = [
-  "openrouter/free",                       // auto-routes to best available free model
-  "nvidia/nemotron-3-nano-30b-a3b:free",   // follows character prompts well
-  "google/gemma-3-4b-it:free",             // direct fallback
-  "google/gemma-3-12b-it:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
+  "openrouter/free",                         // auto-routes to best available free model
+  "meta-llama/llama-3.3-70b-instruct:free", // strong instruction following
+  "google/gemma-3-12b-it:free",             // reliable mid-size model
+  "mistralai/mistral-7b-instruct:free",     // fast, good prompt adherence
+  "qwen/qwen-2.5-7b-instruct:free",         // good free tier fallback
+  "nvidia/nemotron-3-nano-30b-a3b:free",    // last resort
 ];
 
 const OPENROUTER_MODEL_TIMEOUT_MS = 12_000; // 12 s per model attempt
@@ -132,6 +111,7 @@ async function callOpenRouter(
   };
 
   const errors: string[] = [];
+  let genericFallback: string | null = null; // saved if all in-character attempts fail
 
   for (const model of OPENROUTER_MODELS) {
     log.info({ model }, "OpenRouter: trying model");
@@ -184,17 +164,19 @@ async function callOpenRouter(
         continue;
       }
 
-      // Skip if the model ignored the system prompt and replied as a generic assistant
+      // If the model ignored the character prompt and replied as a generic assistant,
+      // save it as a last-resort fallback but keep trying for an in-character reply.
       if (isGenericReply(content)) {
         log.warn(
           { model, reply: content.slice(0, 120) },
-          "OpenRouter: model ignored character prompt (generic assistant response), trying next",
+          "OpenRouter: model ignored character prompt, saving as fallback and trying next",
         );
+        if (!genericFallback) genericFallback = content;
         errors.push(`${model} → ignored character prompt`);
         continue;
       }
 
-      log.info({ model, replyLen: content.length }, "OpenRouter: success");
+      log.info({ model, replyLen: content.length }, "OpenRouter: in-character reply");
       return content;
 
     } catch (err) {
@@ -206,6 +188,16 @@ async function callOpenRouter(
       );
       errors.push(`${model} → ${isTimeout ? "timeout" : String(err)}`);
     }
+  }
+
+  // If every model either errored or gave a generic reply, use the generic one
+  // rather than returning a 502. A slightly off-brand reply is better than nothing.
+  if (genericFallback) {
+    log.warn(
+      { fallback: genericFallback.slice(0, 120), errors },
+      "OpenRouter: all in-character attempts failed — using generic fallback reply",
+    );
+    return genericFallback;
   }
 
   throw new Error(`All OpenRouter models failed — ${errors.join(" | ")}`);
