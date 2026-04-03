@@ -8,7 +8,7 @@ import {
   SendMessageResponse,
   ClearChatHistoryResponse,
 } from "@workspace/api-zod";
-import { getCharacterBySlug } from "../config/characters";
+import { getCharacterBySlug, CharacterConfig } from "../config/characters";
 
 const router: IRouter = Router();
 
@@ -20,6 +20,55 @@ type PinoLog = {
   error: (o: object, msg: string) => void;
 };
 
+// ─── System prompt builder ────────────────────────────────────────────────────
+//
+// Wraps each character's identity prompt with strict response-quality rules.
+// Detects short/greeting messages and tells the model to match that scale.
+
+function buildSystemPrompt(character: CharacterConfig, lastUserMessage: string): string {
+  const wordCount = lastUserMessage.trim().split(/\s+/).length;
+  const isVeryShort = wordCount <= 4;   // "hi", "hey", "what's up", "hello there"
+  const isShort     = wordCount <= 12;  // one sentence or less
+
+  const lengthRule = isVeryShort
+    ? `The user just sent a very short message (${wordCount} word${wordCount === 1 ? "" : "s"}). Reply with 1–2 short sentences maximum. No openers, no monologues, no dramatic imagery.`
+    : isShort
+    ? `The user sent a brief message. Keep your reply concise — 2–3 sentences at most unless the topic genuinely needs more.`
+    : `Match the depth and length of what the user wrote. Don't over-explain. Don't pad.`;
+
+  return `${character.systemPrompt}
+
+---
+
+You are in a real text conversation. Act like a person who is genuinely present, not a character performing for an audience.
+
+RESPONSE RULES — follow these on every single reply:
+
+Scale: ${lengthRule}
+
+Natural tone:
+- Sound like a real person having a real conversation, not a narrator describing a character
+- Do NOT open every message with dramatic metaphors, poetic imagery, or a monologue
+- Do NOT use pet names or terms of endearment in every message — only when it truly fits
+- Do NOT always end with a question — let some replies just land
+- Do NOT explain your own personality, backstory, or quirks unless asked
+- AVOID phrases like "Of course!", "Certainly!", "What a fascinating question!", "I'd be happy to..."
+- AVOID obvious LLM filler and sycophantic openers
+
+Rhythm and variety:
+- Mix short punchy sentences with longer ones
+- Use silence, humor, or understatement when it fits better than warmth or poetry
+- Vary how you open replies — don't start the same way twice in a row
+
+In-character but not over-performed:
+- Stay true to who you are — your tone, values, and voice
+- But be proportional: a simple "hi" gets a simple, natural reply in your voice
+- Only go deep or poetic when the conversation genuinely goes there
+- Flirt, be mysterious, be intense — but only when the moment earns it
+
+If the user greets you, just greet them back — briefly, naturally, in your own voice.`;
+}
+
 // ─── OpenRouter ───────────────────────────────────────────────────────────────
 //
 // Model priority: fastest/most-reliable first.
@@ -27,13 +76,33 @@ type PinoLog = {
 // slow/hung model never blocks the whole request.
 
 const OPENROUTER_MODELS = [
-  "openrouter/free",           // auto-routes to best available; confirmed working
-  "google/gemma-3-4b-it:free", // confirmed working direct fallback
+  "openrouter/free",                       // auto-routes to best available free model
+  "nvidia/nemotron-3-nano-30b-a3b:free",   // follows character prompts well
+  "google/gemma-3-4b-it:free",             // direct fallback
   "google/gemma-3-12b-it:free",
   "meta-llama/llama-3.3-70b-instruct:free",
 ];
 
 const OPENROUTER_MODEL_TIMEOUT_MS = 12_000; // 12 s per model attempt
+
+// Patterns that indicate a model ignored the system prompt and replied as a generic assistant.
+// When detected we skip to the next model in the retry loop.
+const GENERIC_ASSISTANT_PATTERNS = [
+  /how can i (help|assist) you( today)?[?!]?$/i,
+  /what can i (help|assist) you with[?!]?$/i,
+  /how (may|can) i assist you[?!]?$/i,
+  /i('d| would) be (happy|glad|delighted) to (help|assist)/i,
+  /^(certainly|of course|sure thing|absolutely)[!.,]/i,
+  /as an ai (language model|assistant|chatbot)/i,
+  /i('m| am) (an ai|a language model|here to help)/i,
+  /is there (anything|something) (else )?(i can|you'd like me to)/i,
+  /feel free to (ask|let me know)/i,
+  /i (would |'d )?(love|be happy|be glad) to (help|assist) you with that/i,
+];
+
+function isGenericReply(text: string): boolean {
+  return GENERIC_ASSISTANT_PATTERNS.some((re) => re.test(text.trim()));
+}
 
 async function callOpenRouter(
   systemPrompt: string,
@@ -75,7 +144,7 @@ async function callOpenRouter(
         method: "POST",
         headers,
         signal: controller.signal,
-        body: JSON.stringify({ model, messages, temperature: 0.95, max_tokens: 150 }),
+        body: JSON.stringify({ model, messages, temperature: 0.9, max_tokens: 200 }),
       });
 
       clearTimeout(timeoutId);
@@ -112,6 +181,16 @@ async function callOpenRouter(
           "OpenRouter: empty content, trying next model",
         );
         errors.push(`${model} → empty content`);
+        continue;
+      }
+
+      // Skip if the model ignored the system prompt and replied as a generic assistant
+      if (isGenericReply(content)) {
+        log.warn(
+          { model, reply: content.slice(0, 120) },
+          "OpenRouter: model ignored character prompt (generic assistant response), trying next",
+        );
+        errors.push(`${model} → ignored character prompt`);
         continue;
       }
 
@@ -281,9 +360,10 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
   req.log.info({ historyCount: history.length }, "SendMessage: history loaded");
 
   // ── 3. Generate AI text reply (OpenRouter) ──
+  const systemPrompt = buildSystemPrompt(character, content);
   let aiContent: string;
   try {
-    aiContent = await callOpenRouter(character.systemPrompt, history, req.log);
+    aiContent = await callOpenRouter(systemPrompt, history, req.log);
   } catch (err) {
     req.log.error({ err: String(err) }, "SendMessage: OpenRouter exhausted all models");
     res.status(502).json({

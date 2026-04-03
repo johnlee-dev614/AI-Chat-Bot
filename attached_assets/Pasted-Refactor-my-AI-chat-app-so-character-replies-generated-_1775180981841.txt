@@ -1,0 +1,76 @@
+Refactor my AI chat app so character replies generated through OpenRouter feel natural, in-character, and conversational, not generic, over-scripted, or overly theatrical.
+
+Important:
+I do NOT want replies like this for a simple message such as “hi”:
+“The cosmos hums with longing, darling... Tell me your rising or sun sign...”
+That is a counterexample. It is too long, too performative, too templated, and feels like a generic roleplay bot response.
+
+What I want instead:
+When the user sends a simple message like “hi”, the selected character should respond briefly and naturally in their personality, without sounding like a generic assistant and without launching into an overly dramatic monologue.
+
+Desired behavior:
+- Responses should feel like real dialogue from the character
+- Keep the character’s tone, backstory, and vibe
+- But make the reply proportional to the user input
+- For short user inputs, return short natural replies
+- Avoid sounding like a chatbot, customer support agent, or a roleplay template generator
+- Avoid constant overuse of metaphors, pet names, or dramatic imagery
+- Make the character feel alive, subtle, and believable
+
+Examples:
+If the character is mystical and soft, and the user says “hi”, acceptable replies would be more like:
+- “Hey you. You’re up late.”
+- “Hi, sweetheart. What’s on your mind tonight?”
+- “Mm, hi. I was wondering when you’d show up.”
+- “Hey. You feel a little restless tonight.”
+
+These are only style references.
+The model should generate original responses, not hardcode these exact lines.
+
+Core implementation requirements:
+1. Route all user messages through OpenRouter chat completions
+2. Use the selected character profile to build the system prompt
+3. Keep replies in character, but natural and proportional
+4. Use conversation history so replies feel contextual
+5. Save assistant replies back into the existing chat flow
+6. Keep voice compatibility if voice mode is enabled
+7. Do not break conversation starters, but make them use the same response pipeline
+
+Prompt engineering rules:
+Build a system prompt that tells the model:
+- stay fully in character
+- do not sound like a generic AI assistant
+- do not overperform the character on every turn
+- avoid long monologues unless the conversation calls for it
+- match the scale and energy of the user’s message
+- for very short user inputs, prefer short, natural responses
+- make the character sound emotionally real, subtle, and conversational
+- avoid repetitive phrasing patterns
+- avoid always ending with a leading question
+- vary sentence length and rhythm
+- keep the character immersive without sounding fake or overwritten
+
+Character response style rules:
+- brief if the user is brief
+- deeper only when the conversation becomes deeper
+- emotionally flavored but not excessive
+- flirtatious only if appropriate to the character and context
+- no canned responses
+- no generic helper language
+- no constant poetic monologues
+- no obvious LLM-style phrasing
+
+Technical task:
+Create a reusable backend helper such as generateCharacterReply(character, history, userMessage) that:
+- loads the active character profile
+- builds a strong but balanced system prompt
+- sends recent chat history and latest message to OpenRouter
+- returns a natural in-character reply
+
+Also improve quality by:
+- trimming history to relevant recent turns
+- reducing repetitive outputs
+- making greetings, reactions, and short replies feel human
+- preserving consistency of personality across the session
+
+Do not just explain this. Implement it in code.
