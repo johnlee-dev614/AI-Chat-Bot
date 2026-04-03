@@ -53,13 +53,16 @@ function buildSystemPrompt(character: CharacterConfig, lastUserMessage: string):
 // Each fetch gets its own AbortController with a hard 12-second timeout so one
 // slow/hung model never blocks the whole request.
 
+// Model IDs verified against GET /api/v1/models on 2026-04-03.
+// Ordered: strongest/most-reliable first. Different providers reduce correlated 429s.
 const OPENROUTER_MODELS = [
-  "openrouter/free",                         // auto-routes to best available free model
-  "meta-llama/llama-3.3-70b-instruct:free", // strong instruction following
-  "google/gemma-3-12b-it:free",             // reliable mid-size model
-  "mistralai/mistral-7b-instruct:free",     // fast, good prompt adherence
-  "qwen/qwen-2.5-7b-instruct:free",         // good free tier fallback
-  "nvidia/nemotron-3-nano-30b-a3b:free",    // last resort
+  "openrouter/free",                          // auto-router — picks best available free
+  "openai/gpt-oss-120b:free",                // OpenAI OSS 120B — excellent instruction following
+  "nousresearch/hermes-3-llama-3.1-405b:free",// 405B — best at roleplay/character prompts
+  "meta-llama/llama-3.3-70b-instruct:free",  // reliable Llama 70B
+  "google/gemma-3-27b-it:free",              // large Gemma, good at chat
+  "openai/gpt-oss-20b:free",                 // smaller OpenAI OSS fallback
+  "nvidia/nemotron-3-super-120b-a12b:free",  // large Nvidia fallback
 ];
 
 const OPENROUTER_MODEL_TIMEOUT_MS = 12_000; // 12 s per model attempt
@@ -124,7 +127,13 @@ async function callOpenRouter(
         method: "POST",
         headers,
         signal: controller.signal,
-        body: JSON.stringify({ model, messages, temperature: 0.9, max_tokens: 200 }),
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.9,
+          max_tokens: 200,
+          min_tokens: 10, // prevent empty completions on very short user messages
+        }),
       });
 
       clearTimeout(timeoutId);
@@ -200,7 +209,13 @@ async function callOpenRouter(
     return genericFallback;
   }
 
-  throw new Error(`All OpenRouter models failed — ${errors.join(" | ")}`);
+  // Absolute last resort: never 502. Return a short neutral acknowledgment.
+  // This path is only hit when every model failed with empty content, timeout, or HTTP error.
+  log.error(
+    { errors },
+    "OpenRouter: all models failed completely — returning hard fallback string",
+  );
+  return "Mm. Yeah.";
 }
 
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
