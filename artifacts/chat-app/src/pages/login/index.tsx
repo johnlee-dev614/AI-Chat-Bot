@@ -275,7 +275,11 @@ export function Login() {
         )}
 
         <p className="text-xs text-muted-foreground/35 font-light mt-6 text-center">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
+          By continuing, you agree to our{" "}
+          <a href="/terms" className="underline underline-offset-2 hover:text-muted-foreground/60 transition-colors">
+            Terms of Service
+          </a>{" "}
+          and Privacy Policy.
         </p>
       </div>
     </div>

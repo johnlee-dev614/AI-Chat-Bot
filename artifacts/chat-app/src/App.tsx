@@ -15,6 +15,7 @@ import { CharacterProfile } from "@/pages/characters/profile";
 import { ChatView } from "@/pages/chat";
 import { Account } from "@/pages/account";
 import { Login } from "@/pages/login";
+import { Terms } from "@/pages/terms";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ function AppContent() {
               <Route path="/account" component={Account} />
               <Route path="/login" component={Login} />
               <Route path="/signup" component={Login} />
+              <Route path="/terms" component={Terms} />
               <Route component={NotFound} />
             </Switch>
           </main>
