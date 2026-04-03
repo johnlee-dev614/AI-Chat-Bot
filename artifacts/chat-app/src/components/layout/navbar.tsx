@@ -61,14 +61,10 @@ export function Navbar() {
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
                 <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors duration-300">
-                  {user?.profileImageUrl ? (
-                    <img src={user.profileImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-white/10" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                      <User className="w-4 h-4" />
-                    </div>
-                  )}
-                  <span className="font-light">{user?.firstName || "Account"}</span>
+                  <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary/80" />
+                  </div>
+                  <span className="font-light">{user?.displayName || "Account"}</span>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={logout} title="Log out">
                   <LogOut className="w-4 h-4 text-muted-foreground" />

@@ -17,7 +17,7 @@ A full-stack AI companion chat platform. Users browse AI personas, chat with the
 - **Frontend**: React + Vite (`artifacts/chat-app`)
 - **API framework**: Express 5 (`artifacts/api-server`)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Auth**: Replit Auth (OpenID Connect with PKCE)
+- **Auth**: Custom email/password auth (bcrypt, server-side sessions)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **State management**: Zustand
@@ -32,7 +32,7 @@ artifacts/
 │   └── src/
 │       ├── config/characters.ts  # Character definitions (edit to add/modify)
 │       ├── routes/
-│       │   ├── auth.ts           # Replit OIDC auth routes
+│       │   ├── auth.ts           # Email/password auth routes (signup, login, logout)
 │       │   ├── characters.ts     # Character listing/detail
 │       │   ├── chat.ts           # Chat messages + AI (OpenRouter + ElevenLabs)
 │       │   └── users.ts          # Favorites + account

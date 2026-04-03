@@ -1,0 +1,76 @@
+Build a very simple authentication system for my app.
+
+Goal:
+I want account creation and login to be as simple as possible for the MVP.
+
+Requirements:
+1. Users should be able to sign up using only:
+   - email
+   - password
+   - display name
+
+2. Users should be able to log in using:
+   - email
+   - password
+
+3. Keep the signup and login UI extremely simple, clean, and minimal
+   - no extra required profile fields
+   - no phone number
+   - no age verification yet
+   - no payment setup yet
+   - no unnecessary onboarding steps
+
+4. Store the display name on the user account so it can be shown in the UI later
+
+5. Add basic validation:
+   - valid email format
+   - password minimum length
+   - display name required
+   - prevent duplicate email accounts
+   - show clear error messages
+
+6. Add secure auth handling:
+   - hash passwords securely
+   - use proper session or token authentication
+   - do not store plain text passwords
+   - keep the implementation production-minded and clean
+
+7. Keep the code modular because I plan to add more account features later:
+   - Stripe / billing
+   - age verification / ID verification
+   - premium gating
+   - profile settings
+   - onboarding steps after signup
+
+8. Important product flow:
+   - account creation should stay frictionless
+   - age verification and payment should NOT block signup
+   - those should be added later as post-signup account features or gated flows
+
+9. Create the auth flow so it can support future states like:
+   - account created but not age verified
+   - account created but not subscribed
+   - account created and fully verified
+
+10. Do not overcomplicate this with enterprise auth patterns unless necessary.
+Keep it simple, maintainable, and easy to extend.
+
+Implementation details:
+- Create signup page
+- Create login page
+- Create backend auth endpoints
+- Create user model with email, password hash, display name, and basic account metadata
+- Add authenticated session handling
+- Add logout
+- Add protected route support for logged-in users
+
+Future-proofing:
+Please structure the user model so I can later add fields like:
+- stripeCustomerId
+- subscriptionStatus
+- ageVerificationStatus
+- idVerificationStatus
+- onboardingCompleted
+without refactoring the whole auth system
+
+Do not just explain the architecture. Implement the simplest clean version in code.

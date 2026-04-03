@@ -14,32 +14,30 @@ export interface AuthUser {
   /** @nullable */
   email: string | null;
   /** @nullable */
-  firstName: string | null;
-  /** @nullable */
-  lastName: string | null;
-  /** @nullable */
-  profileImageUrl: string | null;
+  displayName: string | null;
 }
 
 export interface AuthUserEnvelope {
   user: AuthUser | null;
 }
 
-export interface MobileTokenExchangeRequest {
+export interface SignupRequest {
   /** @minLength 1 */
-  code: string;
-  /** @minLength 1 */
-  code_verifier: string;
-  /** @minLength 1 */
-  redirect_uri: string;
-  /** @minLength 1 */
-  state: string;
-  /** @minLength 1 */
-  nonce?: string;
+  email: string;
+  /** @minLength 8 */
+  password: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  displayName: string;
 }
 
-export interface MobileTokenExchangeSuccess {
-  token: string;
+export interface LoginRequest {
+  /** @minLength 1 */
+  email: string;
+  /** @minLength 1 */
+  password: string;
 }
 
 export const LogoutSuccessValue = {
@@ -105,19 +103,6 @@ export interface AccountInfo {
  * Opaque session token — `Bearer <sid>`.
  */
 export type AuthorizationSessionHeaderParameter = string;
-
-export type BeginBrowserLoginParams = {
-  /**
-   * Relative path to redirect to after login (must start with `/`). Defaults to `/`.
-   */
-  returnTo?: string;
-};
-
-export type HandleBrowserLoginCallbackParams = {
-  code?: string;
-  state?: string;
-  iss?: string;
-};
 
 export type ListCharactersParams = {
   search?: string;

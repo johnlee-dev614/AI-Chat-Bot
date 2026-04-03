@@ -8,46 +8,54 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refetchUser: () => void;
 }
 
 export function useAuth(): AuthState {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
+  const fetchUser = useCallback(() => {
+    setIsLoading(true);
     fetch("/api/auth/user", { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<{ user: AuthUser | null }>;
       })
       .then((data) => {
-        if (!cancelled) {
-          setUser(data.user ?? null);
-          setIsLoading(false);
-        }
+        setUser(data.user ?? null);
+        setIsLoading(false);
       })
       .catch(() => {
-        if (!cancelled) {
-          setUser(null);
-          setIsLoading(false);
-        }
+        setUser(null);
+        setIsLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  // Navigate to the login page — the page itself handles the email/password form.
   const login = useCallback(() => {
-    const base = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
-    window.location.href = `/api/login?returnTo=${encodeURIComponent(base)}`;
+    const returnTo = window.location.pathname + window.location.search;
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/+$/, "");
+    window.location.href = `${base}/login?returnTo=${encodeURIComponent(returnTo)}`;
   }, []);
 
-  const logout = useCallback(() => {
-    window.location.href = "/api/logout";
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // ignore fetch errors — session cookie is cleared regardless
+    }
+    setUser(null);
+    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/+$/, "");
+    window.location.href = `${base}/`;
   }, []);
 
   return {
@@ -56,5 +64,6 @@ export function useAuth(): AuthState {
     isAuthenticated: !!user,
     login,
     logout,
+    refetchUser: fetchUser,
   };
 }

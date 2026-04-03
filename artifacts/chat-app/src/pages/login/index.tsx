@@ -1,18 +1,118 @@
+import { useState, useEffect, type FormEvent } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
-import { Moon, LogIn } from "lucide-react";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Moon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type Tab = "login" | "signup";
+
+function getReturnTo(): string {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("returnTo") ?? "";
+  // Only allow same-origin relative paths
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/characters";
+}
 
 export function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { isAuthenticated, refetchUser } = useAuth();
   const [, setLocation] = useLocation();
+
+  const [tab, setTab] = useState<Tab>("login");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Signup form state
+  const [signupDisplayName, setSignupDisplayName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirm, setSignupConfirm] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation("/characters");
+      setLocation(getReturnTo());
     }
   }, [isAuthenticated, setLocation]);
+
+  function switchTab(t: Tab) {
+    setTab(t);
+    setError(null);
+  }
+
+  async function handleLogin(e: FormEvent) {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Login failed. Please try again.");
+        return;
+      }
+      refetchUser();
+      setLocation(getReturnTo());
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleSignup(e: FormEvent) {
+    e.preventDefault();
+    if (!signupDisplayName || !signupEmail || !signupPassword || !signupConfirm) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    if (signupPassword !== signupConfirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (signupPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupEmail,
+          password: signupPassword,
+          displayName: signupDisplayName,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Sign up failed. Please try again.");
+        return;
+      }
+      refetchUser();
+      setLocation(getReturnTo());
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-mesh">
@@ -22,29 +122,160 @@ export function Login() {
         <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] bg-accent/8 blur-[120px] rounded-full" />
       </div>
 
-      <div className="glass-panel p-10 rounded-3xl max-w-md w-full relative z-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/80 to-accent/70 flex items-center justify-center shadow-[0_0_30px_-6px_hsl(var(--primary)/0.5)] mx-auto mb-8">
-          <Moon className="w-6 h-6 text-white" />
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl max-w-md w-full relative z-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/80 to-accent/70 flex items-center justify-center shadow-[0_0_30px_-6px_hsl(var(--primary)/0.5)] mb-5">
+            <Moon className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="font-display text-3xl font-semibold italic text-white/90">
+            {tab === "login" ? "Welcome back" : "Join Sonuria"}
+          </h1>
+          <p className="text-muted-foreground/60 font-light text-sm mt-2 text-center">
+            {tab === "login"
+              ? "Sign in to continue your conversations."
+              : "Create an account to save companions and chat history."}
+          </p>
         </div>
 
-        <h1 className="font-display text-3xl font-semibold italic text-white/90 mb-3">
-          Welcome to Sonuria
-        </h1>
-        <p className="text-muted-foreground/70 font-light text-sm leading-relaxed mb-8">
-          Sign in to save your companions, sync favorites, and pick up every conversation right where you left off.
-        </p>
+        {/* Tab toggle */}
+        <div className="flex rounded-xl bg-white/[0.04] border border-white/[0.06] p-1 mb-7">
+          {(["login", "signup"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => switchTab(t)}
+              className={cn(
+                "flex-1 text-sm py-2 rounded-lg font-light tracking-wide transition-all duration-200",
+                tab === t
+                  ? "bg-primary/80 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-white/70"
+              )}
+            >
+              {t === "login" ? "Sign In" : "Create Account"}
+            </button>
+          ))}
+        </div>
 
-        <Button
-          variant="glow"
-          size="lg"
-          className="w-full h-13 font-light tracking-wide rounded-2xl shadow-[0_0_30px_-8px_hsl(var(--primary)/0.5)]"
-          onClick={login}
-        >
-          <LogIn className="w-4 h-4 mr-2" /> Continue with Replit
-        </Button>
+        {/* Error banner */}
+        {error && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm font-light">
+            {error}
+          </div>
+        )}
 
-        <p className="text-xs text-muted-foreground/40 font-light mt-6">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
+        {/* Login form */}
+        {tab === "login" && (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Email
+              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Password
+              </label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="glow"
+              size="lg"
+              disabled={isSubmitting}
+              className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
+            >
+              {isSubmitting ? "Signing in…" : "Sign In"}
+            </Button>
+          </form>
+        )}
+
+        {/* Signup form */}
+        {tab === "signup" && (
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Display Name
+              </label>
+              <input
+                type="text"
+                autoComplete="name"
+                value={signupDisplayName}
+                onChange={(e) => setSignupDisplayName(e.target.value)}
+                placeholder="How should we call you?"
+                maxLength={100}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Email
+              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Password
+                <span className="normal-case ml-1 text-muted-foreground/40">(min 8 chars)</span>
+              </label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={signupConfirm}
+                onChange={(e) => setSignupConfirm(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="glow"
+              size="lg"
+              disabled={isSubmitting}
+              className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
+            >
+              {isSubmitting ? "Creating account…" : "Create Account"}
+            </Button>
+          </form>
+        )}
+
+        <p className="text-xs text-muted-foreground/35 font-light mt-6 text-center">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
     </div>

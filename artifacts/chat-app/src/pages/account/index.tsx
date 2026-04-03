@@ -1,8 +1,7 @@
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetAccount, useListCharacters } from "@workspace/api-client-react";
-import { Avatar } from "@/components/ui/avatar";
 import { CharacterCard } from "@/components/shared/character-card";
-import { Heart, MessageSquareHeart, Star } from "lucide-react";
+import { Heart, MessageSquareHeart, Star, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function Account() {
@@ -50,16 +49,13 @@ export function Account() {
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.06] to-transparent pointer-events-none" />
 
-          <Avatar
-            src={user?.profileImageUrl}
-            name={user?.firstName || "User"}
-            size="xl"
-            className="ring-4 ring-primary/15"
-          />
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/20 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <User className="w-9 h-9 text-primary/70" />
+          </div>
 
           <div className="text-center md:text-left z-10">
             <h1 className="font-display text-3xl font-semibold italic text-white/90 mb-1">
-              Welcome back, {user?.firstName || "friend"}
+              Welcome back, {user?.displayName || "friend"}
             </h1>
             <p className="text-muted-foreground/60 font-light text-sm">{user?.email}</p>
           </div>
