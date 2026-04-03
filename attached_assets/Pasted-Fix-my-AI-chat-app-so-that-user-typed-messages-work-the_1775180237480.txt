@@ -1,0 +1,59 @@
+Fix my AI chat app so that user-typed messages work the same way as the built-in conversation starters.
+
+Current issue:
+- Conversation starter buttons work
+- But when a user types a custom message, the app returns: HTTP 502 Bad Gateway: AI service unavailable. Please try again.
+- I want all custom chat input messages to be sent to the ElevenLabs conversational/chatbot system and receive a normal AI response
+
+What I need:
+1. Route all manually typed chat messages through the same AI response pipeline as the working conversation starters
+2. Use the ElevenLabs chatbot / conversational response system for every user message, not just starter prompts
+3. Make sure the typed message is actually passed as the input text to the ElevenLabs chat request
+4. Preserve the selected character/persona so the reply still matches the current AI companion
+5. Return the AI text response to the chat UI and also trigger voice/audio if voice mode is enabled
+6. Add proper error handling and logging so I can clearly see:
+   - whether the user message was received
+   - whether the ElevenLabs request was sent
+   - the request payload shape
+   - the response status
+   - the exact backend error if the request fails
+7. If the ElevenLabs service fails, show a graceful fallback error in chat instead of a broken 502 whenever possible
+
+Important debugging tasks:
+- Compare the code path used by conversation starter prompts vs manually typed chat input
+- Reuse the same backend request logic for both if possible
+- Check whether custom typed messages are missing required fields such as:
+  - character ID
+  - session ID
+  - conversation ID
+  - message text
+  - agent ID
+  - voice settings
+- Check whether the frontend is posting to the wrong endpoint for typed messages
+- Check whether starter prompts are mocked locally while typed messages hit a real backend path
+- Check whether the server is timing out before ElevenLabs returns a response
+
+Performance improvements:
+I also want to speed up chat buffering and reduce response delay.
+
+Please improve performance by:
+1. Reducing unnecessary waits before sending the AI request
+2. Returning text as soon as it is available
+3. Optimizing backend latency and avoiding duplicate requests
+4. Reusing session/conversation state when possible
+5. Making audio playback start faster if voice mode is on
+6. Reviewing buffering logic so messages do not feel stuck before appearing
+7. Add loading states like:
+   - sending
+   - thinking
+   - speaking
+   so the UI feels responsive even if the response takes a second
+
+Technical goal:
+- Keep all existing functionality
+- Do not break conversation starters
+- Make typed chat messages work with ElevenLabs for real AI replies
+- Improve responsiveness and reduce perceived lag
+- Preserve the current UI and character system
+
+Please inspect both frontend and backend code paths, identify why typed messages fail while starter prompts work, and refactor the message handling so all user messages consistently use ElevenLabs chat responses.

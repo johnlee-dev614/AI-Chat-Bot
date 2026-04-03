@@ -14,20 +14,26 @@ const router: IRouter = Router();
 
 // ─── Shared logger type ──────────────────────────────────────────────────────
 
-type PinoLog = { info: (o: object, msg: string) => void; warn: (o: object, msg: string) => void; error: (o: object, msg: string) => void };
+type PinoLog = {
+  info: (o: object, msg: string) => void;
+  warn: (o: object, msg: string) => void;
+  error: (o: object, msg: string) => void;
+};
 
-// ─── OpenRouter (Llama 3) ────────────────────────────────────────────────────
+// ─── OpenRouter ───────────────────────────────────────────────────────────────
+//
+// Model priority: fastest/most-reliable first.
+// Each fetch gets its own AbortController with a hard 12-second timeout so one
+// slow/hung model never blocks the whole request.
 
-// Working models first, then others as fallback when they recover from rate limits
 const OPENROUTER_MODELS = [
-  "openrouter/free",                            // OpenRouter auto-routes to best available free model
-  "google/gemma-3-4b-it:free",                 // Confirmed working
+  "openrouter/free",           // auto-routes to best available; confirmed working
+  "google/gemma-3-4b-it:free", // confirmed working direct fallback
   "google/gemma-3-12b-it:free",
-  "google/gemma-3-27b-it:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
 ];
+
+const OPENROUTER_MODEL_TIMEOUT_MS = 12_000; // 12 s per model attempt
 
 async function callOpenRouter(
   systemPrompt: string,
@@ -41,6 +47,11 @@ async function callOpenRouter(
     { role: "system", content: systemPrompt },
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
   ];
+
+  log.info(
+    { historyLen: history.length, lastRole: history.at(-1)?.role ?? "none" },
+    "OpenRouter: building request",
+  );
 
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -56,18 +67,26 @@ async function callOpenRouter(
   for (const model of OPENROUTER_MODELS) {
     log.info({ model }, "OpenRouter: trying model");
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_MODEL_TIMEOUT_MS);
+
     try {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers,
-        body: JSON.stringify({ model, messages, temperature: 0.95, max_tokens: 120 }),
+        signal: controller.signal,
+        body: JSON.stringify({ model, messages, temperature: 0.95, max_tokens: 150 }),
       });
+
+      clearTimeout(timeoutId);
 
       const rawText = await res.text();
 
-      // Non-2xx → skip to next model
       if (!res.ok) {
-        log.warn({ model, status: res.status, body: rawText.slice(0, 200) }, "OpenRouter: model failed, trying next");
+        log.warn(
+          { model, status: res.status, body: rawText.slice(0, 300) },
+          "OpenRouter: HTTP error, trying next model",
+        );
         errors.push(`${model} → HTTP ${res.status}`);
         continue;
       }
@@ -77,86 +96,108 @@ async function callOpenRouter(
         error?: { message: string; code?: number };
       };
 
-      // 200 but error body (e.g. rate-limit wrapped in 200) → skip
       if (data.error) {
-        log.warn({ model, errCode: data.error.code, errMsg: data.error.message }, "OpenRouter: model error body, trying next");
-        errors.push(`${model} → ${data.error.message}`);
+        log.warn(
+          { model, errCode: data.error.code, errMsg: data.error.message },
+          "OpenRouter: API error body, trying next model",
+        );
+        errors.push(`${model} → error: ${data.error.message}`);
         continue;
       }
 
       const content = data.choices?.[0]?.message?.content?.trim();
       if (!content) {
-        log.warn({ model, raw: rawText.slice(0, 200) }, "OpenRouter: empty content, trying next");
+        log.warn(
+          { model, raw: rawText.slice(0, 300) },
+          "OpenRouter: empty content, trying next model",
+        );
         errors.push(`${model} → empty content`);
         continue;
       }
 
-      log.info({ model }, "OpenRouter: success");
+      log.info({ model, replyLen: content.length }, "OpenRouter: success");
       return content;
 
     } catch (err) {
-      log.warn({ model, err }, "OpenRouter: fetch threw, trying next");
-      errors.push(`${model} → ${String(err)}`);
+      clearTimeout(timeoutId);
+      const isTimeout = (err as Error)?.name === "AbortError";
+      log.warn(
+        { model, isTimeout, err: String(err) },
+        isTimeout ? "OpenRouter: model timed out, trying next" : "OpenRouter: fetch threw, trying next",
+      );
+      errors.push(`${model} → ${isTimeout ? "timeout" : String(err)}`);
     }
   }
 
-  throw new Error(`All OpenRouter models failed: ${errors.join(" | ")}`);
+  throw new Error(`All OpenRouter models failed — ${errors.join(" | ")}`);
 }
 
 // ─── ElevenLabs TTS ──────────────────────────────────────────────────────────
+
+const ELEVENLABS_TIMEOUT_MS = 18_000; // 18 s
 
 async function callElevenLabs(text: string, log: PinoLog): Promise<string | null> {
   const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
   const voiceId = process.env.VOICE_ID;
 
   if (!apiKey) {
-    log.warn({ keysChecked: ["ELEVENLABS_API_KEY", "VOICE_API_KEY"] }, "ElevenLabs: no API key found");
+    log.warn({}, "ElevenLabs: no API key — skipping TTS");
     return null;
   }
   if (!voiceId) {
-    log.warn({}, "ElevenLabs: VOICE_ID env var not set");
+    log.warn({}, "ElevenLabs: VOICE_ID not set — skipping TTS");
     return null;
   }
 
   const usingKey = process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY";
-  log.info({ voiceId, usingKey }, "ElevenLabs: sending TTS request");
+  log.info({ voiceId, usingKey, textLen: text.length }, "ElevenLabs: sending TTS request");
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ELEVENLABS_TIMEOUT_MS);
 
   try {
-    const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-        },
-        body: JSON.stringify({
-          text,
-          model_id: "eleven_turbo_v2_5",
-          voice_settings: { stability: 0.3, similarity_boost: 0.85 },
-        }),
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
       },
-    );
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_turbo_v2_5",
+        voice_settings: { stability: 0.4, similarity_boost: 0.8 },
+      }),
+    });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "(unreadable)");
-      log.error({ status: res.status, body: errBody }, "ElevenLabs: HTTP error");
+      log.error({ status: res.status, body: errBody.slice(0, 300) }, "ElevenLabs: HTTP error");
       return null;
     }
 
     const audioBuffer = await res.arrayBuffer();
     const base64 = Buffer.from(audioBuffer).toString("base64");
-    log.info({ base64Len: base64.length }, "ElevenLabs: audio generated");
+    log.info({ base64Len: base64.length }, "ElevenLabs: audio ready");
     return base64;
+
   } catch (err) {
-    log.error({ err }, "ElevenLabs: request threw");
+    clearTimeout(timeoutId);
+    const isTimeout = (err as Error)?.name === "AbortError";
+    log.error(
+      { isTimeout, err: String(err) },
+      isTimeout ? "ElevenLabs: timed out" : "ElevenLabs: fetch threw",
+    );
     return null;
   }
 }
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
+// GET /api/chat/:characterSlug/messages — fetch history
 router.get("/chat/:characterSlug/messages", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -184,6 +225,7 @@ router.get("/chat/:characterSlug/messages", async (req: Request, res: Response) 
   res.json(GetChatHistoryResponse.parse({ messages }));
 });
 
+// POST /api/chat/:characterSlug/messages — send a message, get AI reply + optional audio
 router.post("/chat/:characterSlug/messages", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -199,13 +241,19 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
 
   const parsed = SendMessageBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    req.log.warn({ issues: parsed.error.issues }, "SendMessage: invalid body");
+    res.status(400).json({ error: "Invalid request body", detail: parsed.error.issues });
     return;
   }
 
   const { content } = parsed.data;
 
-  // Save user message
+  req.log.info(
+    { characterSlug, userId: req.user.id, messageLen: content.length },
+    "SendMessage: received",
+  );
+
+  // ── 1. Persist user message ──
   const userMsgId = randomUUID();
   await db.insert(messagesTable).values({
     id: userMsgId,
@@ -215,8 +263,9 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     content,
     createdAt: new Date(),
   });
+  req.log.info({ userMsgId }, "SendMessage: user message saved");
 
-  // Get last 10 messages for context (excluding the one we just saved)
+  // ── 2. Load conversation history (last 12 messages for context) ──
   const history = await db
     .select()
     .from(messagesTable)
@@ -227,23 +276,30 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
       ),
     )
     .orderBy(asc(messagesTable.createdAt))
-    .limit(10);
+    .limit(12);
 
-  // Generate AI reply via OpenRouter
+  req.log.info({ historyCount: history.length }, "SendMessage: history loaded");
+
+  // ── 3. Generate AI text reply (OpenRouter) ──
   let aiContent: string;
   try {
     aiContent = await callOpenRouter(character.systemPrompt, history, req.log);
   } catch (err) {
-    req.log.error({ err }, "OpenRouter error");
-    res.status(502).json({ error: "AI service unavailable. Please try again." });
+    req.log.error({ err: String(err) }, "SendMessage: OpenRouter exhausted all models");
+    res.status(502).json({
+      error: "Could not reach the AI right now. Please try again in a moment.",
+      detail: String(err),
+    });
     return;
   }
 
-  // Generate voice via ElevenLabs (non-fatal if it fails)
-  const audioBase64 = await callElevenLabs(aiContent, req.log);
-  req.log.info({ hasAudio: !!audioBase64 }, "ElevenLabs result");
+  req.log.info({ aiReplyLen: aiContent.length }, "SendMessage: AI reply ready");
 
-  // Save AI message
+  // ── 4. Generate voice audio (ElevenLabs, non-fatal) ──
+  const audioBase64 = await callElevenLabs(aiContent, req.log);
+  req.log.info({ hasAudio: !!audioBase64 }, "SendMessage: ElevenLabs result");
+
+  // ── 5. Persist AI message ──
   const aiMsgId = randomUUID();
   const now = new Date();
   await db.insert(messagesTable).values({
@@ -255,18 +311,21 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     createdAt: now,
   });
 
-  const aiMessage = {
-    id: aiMsgId,
-    characterSlug,
-    role: "assistant" as const,
-    content: aiContent,
-    createdAt: now,   // Date object — Zod schema uses useDates:true, stringify handles serialization
-    audio: audioBase64,
-  };
+  req.log.info({ aiMsgId }, "SendMessage: AI message saved — responding");
 
-  res.json(SendMessageResponse.parse(aiMessage));
+  res.json(
+    SendMessageResponse.parse({
+      id: aiMsgId,
+      characterSlug,
+      role: "assistant",
+      content: aiContent,
+      createdAt: now,
+      audio: audioBase64,
+    }),
+  );
 });
 
+// DELETE /api/chat/:characterSlug/messages/clear — wipe history
 router.delete("/chat/:characterSlug/messages/clear", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -287,8 +346,7 @@ router.delete("/chat/:characterSlug/messages/clear", async (req: Request, res: R
   res.json(ClearChatHistoryResponse.parse({ success: true }));
 });
 
-// ─── Voice Health Check (debug) ─────────────────────────────────────────────
-// GET /api/voice/health — tests ElevenLabs connectivity and returns status JSON
+// ─── Voice Health Check ───────────────────────────────────────────────────────
 
 router.get("/voice/health", async (req: Request, res: Response) => {
   const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_API_KEY;
@@ -305,27 +363,29 @@ router.get("/voice/health", async (req: Request, res: Response) => {
     return;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
   try {
-    const testRes = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-        },
-        body: JSON.stringify({
-          text: "test",
-          model_id: "eleven_turbo_v2_5",
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-        }),
+    const testRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
       },
-    );
+      body: JSON.stringify({
+        text: "Hello",
+        model_id: "eleven_turbo_v2_5",
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    });
+
+    clearTimeout(timeoutId);
 
     if (!testRes.ok) {
       const body = await testRes.text().catch(() => "(unreadable)");
-      req.log.error({ status: testRes.status, body }, "ElevenLabs health check failed");
       res.json({
         ok: false,
         httpStatus: testRes.status,
@@ -343,7 +403,9 @@ router.get("/voice/health", async (req: Request, res: Response) => {
       usingKey: process.env.ELEVENLABS_API_KEY ? "ELEVENLABS_API_KEY" : "VOICE_API_KEY",
       voiceId,
     });
+
   } catch (err) {
+    clearTimeout(timeoutId);
     res.json({ ok: false, error: String(err) });
   }
 });
