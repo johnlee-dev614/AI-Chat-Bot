@@ -26,6 +26,13 @@ type PinoLog = {
 // Detects short/greeting messages and tells the model to match that scale.
 
 function buildSystemPrompt(character: CharacterConfig, lastUserMessage: string): string {
+  // Characters with their own style rules (e.g. Isabella) already encode all
+  // behaviour guidance in their systemPrompt — wrapping them with extra rules
+  // dilutes the signal and confuses smaller models.
+  if (character.preferredModels) {
+    return character.systemPrompt;
+  }
+
   const wordCount = lastUserMessage.trim().split(/\s+/).length;
 
   // Keep brevity guidance short and model-friendly — small free models get
@@ -90,6 +97,7 @@ async function callOpenRouter(
   systemPrompt: string,
   history: Array<{ role: string; content: string }>,
   log: PinoLog,
+  modelList: string[] = OPENROUTER_MODELS,
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
@@ -116,7 +124,7 @@ async function callOpenRouter(
   const errors: string[] = [];
   let genericFallback: string | null = null; // saved if all in-character attempts fail
 
-  for (const model of OPENROUTER_MODELS) {
+  for (const model of modelList) {
     log.info({ model }, "OpenRouter: trying model");
 
     const controller = new AbortController();
@@ -368,9 +376,10 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
 
   // ── 3. Generate AI text reply (OpenRouter) ──
   const systemPrompt = buildSystemPrompt(character, content);
+  const modelList = character.preferredModels ?? OPENROUTER_MODELS;
   let aiContent: string;
   try {
-    aiContent = await callOpenRouter(systemPrompt, history, req.log);
+    aiContent = await callOpenRouter(systemPrompt, history, req.log, modelList);
   } catch (err) {
     req.log.error({ err: String(err) }, "SendMessage: OpenRouter exhausted all models");
     res.status(502).json({
