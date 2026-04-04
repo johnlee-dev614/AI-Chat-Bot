@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
 import { db, messagesTable } from "@workspace/db";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 import {
   GetChatHistoryResponse,
   SendMessageBody,
@@ -424,8 +424,10 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
   });
   req.log.info({ userMsgId }, "SendMessage: user message saved");
 
-  // ── 2. Load conversation history (last 12 messages for context) ──
-  const history = await db
+  // ── 2. Load conversation history (last 20 messages for context) ──
+  // Fetch the most-recent messages first (desc), then reverse to chronological
+  // order so the model always sees the latest exchange, not the oldest ones.
+  const historyRaw = await db
     .select()
     .from(messagesTable)
     .where(
@@ -434,8 +436,10 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
         eq(messagesTable.characterSlug, characterSlug),
       ),
     )
-    .orderBy(asc(messagesTable.createdAt))
-    .limit(12);
+    .orderBy(desc(messagesTable.createdAt))
+    .limit(20);
+
+  const history = historyRaw.reverse(); // restore chronological order for the model
 
   req.log.info({ historyCount: history.length }, "SendMessage: history loaded");
 
