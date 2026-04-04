@@ -89,53 +89,93 @@ const GENERIC_ASSISTANT_PATTERNS = [
   /i (would |'d )?(love|be happy|be glad) to (help|assist) you with that/i,
 ];
 
+// ── Thinking-leak helpers ────────────────────────────────────────────────────
 // Patterns that indicate a model is "thinking out loud" — exposing its reasoning
 // process instead of just replying as the character.
 const THINKING_LEAK_PATTERNS = [
+  // Reasoning starters
   /okay,?\s+the user (just )?(said|sent|wrote|asked)/i,
+  /the user (just )?(said|sent|wrote|typed|messaged)/i,
+  /user said\b/i,
   /now i need to respond/i,
   /i need to respond as/i,
-  /looking at the (history|conversation|context)/i,
-  /let me (think|craft|write|reply|respond|formulate)/i,
   /i (should|will|need to|must) (respond|reply|engage|keep|make sure)/i,
-  /\b(isabella'?s?|character'?s?) rules\b/i,
+  /let me (think|craft|write|reply|respond|formulate)/i,
+  // Context/history review
+  /looking at the (history|conversation|context)/i,
+  /look at (the )?(history|conversation|context)/i,
+  /she'?s been (playful|flirty|teasing|engaging)/i,
+  /she('s| has) been\b/i,
+  /based on (the |our )?(conversation|history|context)/i,
+  // Instructions leaking back out
+  /\b(isabella'?s?|character'?s?) (rules|style|persona|personality)\b/i,
   /must stay in character/i,
-  /this is (explicit|flirty|sensitive)/i,
+  /this is (explicit|flirty|sensitive|a roleplay)/i,
   /the (user|message) is (asking|saying|requesting)/i,
   /my response (should|will|needs to)/i,
   /so (my |the )?reply (should|will|is)/i,
-  /→\s*i (said|replied|responded)/i,   // history recaps like "User said X → I replied Y"
+  /\bshort,?\s+flirty\b/i,           // e.g. "short, flirty, teasing"
+  /\bflirty,?\s+teasing\b/i,
+  /\d[-–]\d\s+sentences?\b/i,        // e.g. "1-2 sentences"
+  /\bteasing,?\s+\d/i,               // e.g. "teasing, 1-2 sentences"
+  /respond(ing)? (with|in) (a |character)/i,
+  /keep it (short|brief|playful)/i,
+  /→\s*i (said|replied|responded)/i, // history recaps
   /user started with/i,
+  /\bplay(ful|ing) hard to get\b/i,
+  /something like[:\s]/i,            // "I'll say something like: …"
+  /\bmy (reply|response|answer)\b/i,
+  /<thinking>/i,
+  /^\s*\*{1,3}[^*]+\*{1,3}\s*$/im,  // line that's only **bolded text** (meta-notes)
 ];
 
 function isGenericReply(text: string): boolean {
   return GENERIC_ASSISTANT_PATTERNS.some((re) => re.test(text.trim()));
 }
 
-// Detect chain-of-thought leakage. When found, try to salvage the actual reply
-// (typically the last short line after all the reasoning). Returns null if we
-// can't extract a clean reply — the caller should skip to the next model.
-function extractFromThinkingLeak(text: string): string | null {
-  const hasLeak = THINKING_LEAK_PATTERNS.some((p) => p.test(text));
-  if (!hasLeak) return text; // no leak detected — return as-is
+// A line is "safe" (looks like actual in-character reply) when it:
+// - Is short enough to be a chat message
+// - Contains no reasoning markers
+// - Contains in-character cues OR has no meta-note cues
+function isCleanReplyLine(line: string): boolean {
+  if (line.length > 200) return false;
+  if (line.length < 3) return false;
+  if (/^[-•*]\s/.test(line)) return false; // list item
+  if (/^\d+\.\s/.test(line)) return false; // numbered list
+  if (THINKING_LEAK_PATTERNS.some((p) => p.test(line))) return false;
+  if (GENERIC_ASSISTANT_PATTERNS.some((p) => p.test(line))) return false;
+  return true;
+}
 
-  // Try to find an explicit "Isabella: <reply>" marker the model may have added.
-  const markerMatch = text.match(/Isabella:\s*[""]?(.+?)[""]?\s*$/im);
-  if (markerMatch) return markerMatch[1].trim();
+// Detect chain-of-thought leakage. When found, try to salvage the actual reply.
+// Returns null if we can't extract a clean reply — caller should skip this model.
+function extractFromThinkingLeak(rawText: string): string | null {
+  const hasLeak = THINKING_LEAK_PATTERNS.some((p) => p.test(rawText));
+  if (!hasLeak) return rawText; // clean — return as-is
 
-  // Fall back to the last non-empty line that looks like a real reply
-  // (short, doesn't look like more reasoning).
-  const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
-    // Skip lines that are themselves reasoning or list items
-    if (line.length > 180) continue;
-    if (/^[-•*]\s/.test(line)) continue;
-    if (THINKING_LEAK_PATTERNS.some((p) => p.test(line))) continue;
-    if (line.length >= 4) return line;
+  // ① Look for an explicit "Isabella: <reply>" marker (model named its output)
+  const namedMatch = rawText.match(/\bisabella\s*:\s*[""]?([^\n"]{4,160})[""]?\s*$/im);
+  if (namedMatch) {
+    const candidate = namedMatch[1].trim();
+    if (isCleanReplyLine(candidate)) return candidate;
   }
 
-  return null; // couldn't extract — skip this model
+  // ② Look for the last quoted string — models often quote the actual reply
+  //    e.g.  I'll say: "wow, just 'hey'? 😏"
+  const quotedMatches = [...rawText.matchAll(/[""]([^""]{4,160})[""]|\u201c([^\u201d]{4,160})\u201d/g)];
+  if (quotedMatches.length > 0) {
+    const last = quotedMatches[quotedMatches.length - 1];
+    const candidate = (last[1] ?? last[2] ?? "").trim();
+    if (isCleanReplyLine(candidate)) return candidate;
+  }
+
+  // ③ Fall back to last clean line (scanning bottom-up)
+  const lines = rawText.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (isCleanReplyLine(lines[i])) return lines[i];
+  }
+
+  return null; // nothing salvageable — skip this model
 }
 
 async function callOpenRouter(
