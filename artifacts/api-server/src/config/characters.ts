@@ -62,7 +62,7 @@ export const characters: CharacterConfig[] = [
     tags: ["romantic", "sensual", "flirty", "playful"],
     category: "romantic",
     isOnline: true,
-    avatarUrl: null,
+    avatarUrl: "/images/isabella.jpg",
     personalityTraits: ["Flirty", "Confident", "Feisty", "Warm", "Playful"],
     conversationStarters: [
       "Tell me something interesting about you",
