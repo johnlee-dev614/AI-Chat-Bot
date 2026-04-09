@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, User, LogOut, Menu, X } from "lucide-react";
+import { User, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useState, useEffect } from "react";
@@ -35,9 +35,11 @@ export function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/80 to-accent/80 flex items-center justify-center shadow-[0_0_20px_rgba(180,80,120,0.25)] group-hover:shadow-[0_0_30px_rgba(180,80,120,0.45)] transition-all duration-500">
-              <Moon className="w-4 h-4 text-white" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Sonuria"
+              className="w-9 h-9 rounded-xl object-cover shadow-[0_0_20px_rgba(180,80,120,0.25)] group-hover:shadow-[0_0_30px_rgba(180,80,120,0.45)] transition-all duration-500"
+            />
             <span className="font-display font-semibold text-xl tracking-wide text-white/90 italic">Sonuria</span>
           </Link>
 

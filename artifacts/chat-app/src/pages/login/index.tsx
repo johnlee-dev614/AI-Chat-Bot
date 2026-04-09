@@ -2,7 +2,6 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
-import { Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = "login" | "signup";
@@ -125,9 +124,11 @@ export function Login() {
       <div className="glass-panel p-8 sm:p-10 rounded-3xl max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/80 to-accent/70 flex items-center justify-center shadow-[0_0_30px_-6px_hsl(var(--primary)/0.5)] mb-5">
-            <Moon className="w-6 h-6 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Sonuria"
+            className="w-14 h-14 rounded-2xl object-cover shadow-[0_0_30px_-6px_hsl(var(--primary)/0.5)] mb-5"
+          />
           <h1 className="font-display text-3xl font-semibold italic text-white/90">
             {tab === "login" ? "Welcome back" : "Join Sonuria"}
           </h1>
