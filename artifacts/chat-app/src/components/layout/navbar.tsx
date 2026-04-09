@@ -43,7 +43,7 @@ export function Navbar() {
             <img
               src="/wordmark.png"
               alt="Sonuria"
-              className="h-9 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+              className="h-14 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
             />
           </Link>
 
