@@ -34,13 +34,17 @@ export function Navbar() {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <img
               src="/logo.png"
               alt="Sonuria"
-              className="w-9 h-9 rounded-xl object-cover shadow-[0_0_20px_rgba(180,80,120,0.25)] group-hover:shadow-[0_0_30px_rgba(180,80,120,0.45)] transition-all duration-500"
+              className="w-9 h-9 object-contain transition-all duration-500 drop-shadow-[0_0_12px_rgba(180,80,120,0.35)] group-hover:drop-shadow-[0_0_20px_rgba(180,80,120,0.55)]"
             />
-            <span className="font-display font-semibold text-xl tracking-wide text-white/90 italic">Sonuria</span>
+            <img
+              src="/wordmark.png"
+              alt="Sonuria"
+              className="h-6 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+            />
           </Link>
 
           {/* Desktop Nav */}
