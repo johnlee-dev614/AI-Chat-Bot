@@ -36,16 +36,11 @@ export function Navbar() {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/logo.png"
-              alt="Sonuria"
-              className="h-10 w-10 object-contain transition-all duration-500 drop-shadow-[0_0_12px_rgba(180,80,120,0.35)] group-hover:drop-shadow-[0_0_20px_rgba(180,80,120,0.55)]"
-            />
+          <Link href="/" className="flex items-center group">
             <img
               src="/wordmark.png"
               alt="Sonuria"
-              className="h-10 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+              className="h-9 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
             />
           </Link>
 
