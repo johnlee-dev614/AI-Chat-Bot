@@ -1,14 +1,16 @@
 import { Link, useLocation } from "wouter";
-import { User, LogOut, Menu, X } from "lucide-react";
+import { User, LogOut, Menu, X, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEmbers } from "@/lib/ember-context";
 
 export function Navbar() {
   const [location] = useLocation();
   const { user, isAuthenticated, login, logout } = useAuth();
+  const { embers, setShowPaywall } = useEmbers();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -66,6 +68,23 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
+                {/* Ember balance pill */}
+                {embers !== null && (
+                  <button
+                    onClick={() => setShowPaywall(true)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-300 hover:scale-105 ${
+                      embers <= 0
+                        ? "bg-rose-500/10 border-rose-500/25 text-rose-400 hover:bg-rose-500/15"
+                        : embers <= 3
+                        ? "bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/15"
+                        : "bg-amber-500/8 border-amber-500/15 text-amber-300/80 hover:bg-amber-500/12"
+                    }`}
+                    title="Ember balance — click to top up"
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>{embers}</span>
+                  </button>
+                )}
                 <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors duration-300">
                   <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
                     <User className="w-4 h-4 text-primary/80" />

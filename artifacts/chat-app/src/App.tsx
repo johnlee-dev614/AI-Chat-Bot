@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@workspace/replit-auth-web";
+import { EmberProvider } from "@/lib/ember-context";
+import { EmberPaywallModal } from "@/components/paywall/EmberModal";
 
 // Layout & Shared
 import { Navbar } from "@/components/layout/navbar";
@@ -66,7 +68,10 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <AppContent />
+            <EmberProvider>
+              <AppContent />
+              <EmberPaywallModal />
+            </EmberProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

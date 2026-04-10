@@ -1,12 +1,17 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, favoritesTable, messagesTable } from "@workspace/db";
+import { db, favoritesTable, messagesTable, usersTable, emberTransactionsTable } from "@workspace/db";
 import { eq, and, countDistinct } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import {
   GetFavoritesResponse,
   AddFavoriteResponse,
   RemoveFavoriteResponse,
   GetAccountResponse,
+  GetBalanceResponse,
+  ClaimStarterResponse,
 } from "@workspace/api-zod";
+
+const STARTER_PACK_EMBERS = 10;
 
 const router: IRouter = Router();
 
@@ -61,6 +66,80 @@ router.delete("/users/favorites/:characterSlug", async (req: Request, res: Respo
   res.json(RemoveFavoriteResponse.parse({ success: true }));
 });
 
+// ── GET /api/users/balance ────────────────────────────────────────────────────
+router.get("/users/balance", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [user] = await db
+    .select({ embers: usersTable.embers, trialUsed: usersTable.trialUsed })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.id));
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.json(GetBalanceResponse.parse({ embers: user.embers, trialUsed: user.trialUsed }));
+});
+
+// ── POST /api/users/claim-starter ─────────────────────────────────────────────
+// Grants "The Spark" starter pack (10 Embers) once per account.
+router.post("/users/claim-starter", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [user] = await db
+    .select({ embers: usersTable.embers, trialUsed: usersTable.trialUsed })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.id));
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  if (user.trialUsed) {
+    res.json(
+      ClaimStarterResponse.parse({
+        embers: user.embers,
+        granted: false,
+        message: "Starter pack already claimed.",
+      }),
+    );
+    return;
+  }
+
+  const newEmbers = user.embers + STARTER_PACK_EMBERS;
+
+  await db
+    .update(usersTable)
+    .set({ embers: newEmbers, trialUsed: true })
+    .where(eq(usersTable.id, req.user.id));
+
+  await db.insert(emberTransactionsTable).values({
+    id: randomUUID(),
+    userId: req.user.id,
+    type: "credit",
+    amount: STARTER_PACK_EMBERS,
+    description: "The Spark starter pack",
+  });
+
+  res.json(
+    ClaimStarterResponse.parse({
+      embers: newEmbers,
+      granted: true,
+      message: `Welcome! ${STARTER_PACK_EMBERS} Embers added to your account.`,
+    }),
+  );
+});
+
+// ── GET /api/users/account ────────────────────────────────────────────────────
 router.get("/users/account", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });

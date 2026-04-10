@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const sessionsTable = pgTable(
   "sessions",
@@ -29,8 +29,21 @@ export const usersTable = pgTable("users", {
   idVerificationStatus: varchar("id_verification_status"),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
 
+  // Ember (credit) economy
+  embers: integer("embers").notNull().default(0),
+  trialUsed: boolean("trial_used").notNull().default(false),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const emberTransactionsTable = pgTable("ember_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: varchar("type", { length: 10 }).notNull(),        // 'credit' | 'debit'
+  amount: integer("amount").notNull(),
+  description: varchar("description", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type UpsertUser = typeof usersTable.$inferInsert;

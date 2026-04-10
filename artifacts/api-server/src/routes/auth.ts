@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, emberTransactionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+
 import {
   GetCurrentAuthUserResponse,
   SignupBody,
@@ -21,6 +23,7 @@ import {
 } from "../lib/auth";
 
 const BCRYPT_ROUNDS = 12;
+const STARTER_PACK_EMBERS = 10;
 
 const router: IRouter = Router();
 
@@ -78,8 +81,19 @@ router.post("/auth/signup", async (req: Request, res: Response) => {
       email: normalizedEmail,
       passwordHash,
       displayName: displayName.trim(),
+      embers: STARTER_PACK_EMBERS,
+      trialUsed: true,
     })
     .returning();
+
+  // Log the starter pack grant
+  await db.insert(emberTransactionsTable).values({
+    id: randomUUID(),
+    userId: user.id,
+    type: "credit",
+    amount: STARTER_PACK_EMBERS,
+    description: "The Spark starter pack",
+  });
 
   const sessionData: SessionData = {
     user: {

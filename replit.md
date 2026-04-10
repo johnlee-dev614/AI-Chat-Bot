@@ -32,18 +32,22 @@ artifacts/
 │   └── src/
 │       ├── config/characters.ts  # Character definitions (edit to add/modify)
 │       ├── routes/
-│       │   ├── auth.ts           # Email/password auth routes (signup, login, logout)
+│       │   ├── auth.ts           # Email/password auth routes (signup, login, logout) — auto-grants 10 Embers on signup
 │       │   ├── characters.ts     # Character listing/detail
-│       │   ├── chat.ts           # Chat messages + AI (OpenRouter + ElevenLabs)
-│       │   └── users.ts          # Favorites + account
+│       │   ├── chat.ts           # Chat messages + AI (OpenRouter + ElevenLabs) — deducts 1 Ember per message
+│       │   ├── users.ts          # Favorites + account + ember balance + claim-starter
+│       │   └── payments.ts       # Payment placeholder (503) + GET /api/payments/packages
 │       ├── lib/auth.ts           # Session management
 │       └── middlewares/authMiddleware.ts
 └── chat-app/            # React + Vite frontend
     └── src/
         ├── pages/        # Route pages
         ├── components/   # Shared components
-        │   ├── layout/   # Navbar, Footer
+        │   ├── layout/   # Navbar (with Ember balance pill), Footer
+        │   ├── paywall/  # EmberPaywallModal
         │   └── shared/   # CharacterCard, AgeGate
+        ├── lib/
+        │   └── ember-context.tsx  # EmberProvider + useEmbers hook
         ├── index.css     # Theme variables, fonts, utility classes
         └── store/        # Zustand state
 lib/
@@ -73,6 +77,38 @@ lib/
 - **Voice synthesis**: ElevenLabs TTS on AI replies (non-fatal if unavailable)
 - **6 pre-seeded characters**: Luna, Kai, Dr. Serena, Zara, Marco, Nova
 - **Voice health check**: `GET /api/voice/health`
+
+## Ember Paywall System
+
+Embers are Sonuria's in-app currency. Each message sent costs 1 Ember.
+
+### Economy Rules
+- **New account**: 10 Embers granted automatically at signup (`trialUsed = true`)
+- **Cost**: 1 Ember per message sent (atomic SQL decrement, floored at 0)
+- **Freeze**: Chat input frozen when balance = 0, paywall modal shown
+- **Navbar**: Ember balance pill displayed while logged in (amber/rose color when low/empty, clickable to open paywall)
+
+### DB Schema
+- `users.embers` (integer, default 0) — current balance
+- `users.trial_used` (boolean, default false) — whether starter pack was claimed
+- `ember_transactions` — audit log (type: 'credit' | 'debit', amount, description)
+
+### API Endpoints
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /api/users/balance` | ✓ | Returns `{ embers, trialUsed }` |
+| `POST /api/users/claim-starter` | ✓ | One-time 10-Ember grant (idempotent) |
+| `GET /api/payments/packages` | — | Returns purchase packages (Spark/Flame/Inferno) |
+| `POST /api/payments/purchase` | ✓ | **Placeholder** — returns 503 until payment provider is wired |
+
+### Frontend Components
+- `src/lib/ember-context.tsx` — `EmberProvider` + `useEmbers()` hook (wraps all auth'd routes)
+- `src/components/paywall/EmberModal.tsx` — Slide-up paywall modal with package selection
+- Chat page: `isEmberless` flag drives frozen input → "Get Embers" CTA banner
+- `SendMessageResponse` includes `embers` field — balance updates live after each message
+
+### Connecting a Payment Provider
+Replace the stub in `artifacts/api-server/src/routes/payments.ts` with real Stripe/etc integration via Replit environment secrets. On successful purchase, credit `usersTable.embers` and insert an `emberTransactionsTable` record with `type: 'credit'`.
 
 ## AI Integration
 

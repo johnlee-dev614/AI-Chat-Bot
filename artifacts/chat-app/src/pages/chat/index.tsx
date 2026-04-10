@@ -10,12 +10,13 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ArrowLeft, ShieldAlert, Volume2, VolumeX, RefreshCw, Mic, MicOff } from "lucide-react";
+import { Send, ArrowLeft, ShieldAlert, Volume2, VolumeX, RefreshCw, Flame } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEmbers } from "@/lib/ember-context";
 
 // ── Chat state machine ────────────────────────────────────────────────────────
 type SendState = "idle" | "sending" | "thinking" | "speaking";
@@ -66,6 +67,7 @@ export function ChatView() {
   const slug = params?.slug || "";
 
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { embers, updateEmbers, setShowPaywall } = useEmbers();
   const queryClient = useQueryClient();
 
   const { data: character } = useGetCharacter(slug, {
@@ -109,6 +111,11 @@ export function ChatView() {
         setLastError(null);
       },
       onSuccess: (data) => {
+        // Update ember balance from response
+        if (typeof data.embers === "number") {
+          updateEmbers(data.embers);
+        }
+
         // Clear optimistic + refresh history
         setOptimisticMessages([]);
         queryClient.invalidateQueries({ queryKey: [`/api/chat/${slug}/messages`] });
@@ -123,9 +130,18 @@ export function ChatView() {
           setSendState("idle");
         }
       },
-      onError: (err) => {
+      onError: (err: unknown) => {
         setOptimisticMessages([]);
         setSendState("idle");
+
+        // Check for 402 (no embers)
+        const anyErr = err as { status?: number; response?: { status?: number } };
+        const status = anyErr?.status ?? anyErr?.response?.status;
+        if (status === 402) {
+          setShowPaywall(true);
+          return;
+        }
+
         const msg = (err as Error)?.message ?? "Failed to send. Please try again.";
         setLastError(msg);
       },
@@ -188,6 +204,7 @@ export function ChatView() {
   }, [voiceEnabled, stopAudio, sendState]);
 
   const isBusy = sendState !== "idle";
+  const isEmberless = embers !== null && embers <= 0;
 
   const statusLabel: Record<SendState, string> = {
     idle: "",
@@ -424,52 +441,83 @@ export function ChatView() {
 
         {/* ── Input Bar ─────────────────────────────────────────────────────── */}
         <div className="p-4 md:p-5 border-t border-white/[0.05] bg-background/70 backdrop-blur-2xl relative z-10">
-          {/* Mobile starters strip */}
-          <div className="md:hidden flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
-            {character.conversationStarters.slice(0, 3).map((starter) => (
-              <button
-                key={starter}
-                onClick={() => {
-                  setContent(starter);
-                  inputRef.current?.focus();
-                }}
-                disabled={isBusy}
-                className="shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-white/50 font-light whitespace-nowrap hover:border-primary/25 hover:text-white/70 transition-all disabled:opacity-40"
-              >
-                {starter}
-              </button>
-            ))}
-          </div>
+          {/* Mobile starters strip — hide when emberless */}
+          {!isEmberless && (
+            <div className="md:hidden flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+              {character.conversationStarters.slice(0, 3).map((starter) => (
+                <button
+                  key={starter}
+                  onClick={() => {
+                    setContent(starter);
+                    inputRef.current?.focus();
+                  }}
+                  disabled={isBusy}
+                  className="shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-white/50 font-light whitespace-nowrap hover:border-primary/25 hover:text-white/70 transition-all disabled:opacity-40"
+                >
+                  {starter}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <form onSubmit={handleSend} className="max-w-3xl mx-auto relative flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                sendState === "speaking"
-                  ? `${character.name} is speaking…`
-                  : `Message ${character.name}…`
-              }
-              className={cn(
-                "pr-14 h-12 rounded-2xl font-light text-sm transition-all duration-300",
-                "bg-card/50 border-white/[0.08] text-white/90 placeholder:text-muted-foreground/40",
-                "focus-visible:border-primary/30 focus-visible:ring-0",
-                "focus-visible:shadow-[0_0_20px_-4px_hsl(var(--primary)/0.25)]",
-              )}
-              disabled={isBusy}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              variant="glow"
-              className="absolute right-1.5 h-9 w-9 rounded-xl shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)]"
-              disabled={!content.trim() || isBusy}
-            >
-              <Send className="w-4 h-4 ml-0.5" />
-            </Button>
-          </form>
+          {/* Paywall freeze banner */}
+          {isEmberless ? (
+            <div className="max-w-3xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-gradient-to-r from-amber-500/8 to-rose-500/8 border border-amber-500/20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+                    <Flame className="w-4.5 h-4.5 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-white/85 font-medium">You're out of Embers</p>
+                    <p className="text-xs text-muted-foreground font-light">Top up to keep chatting with {character.name}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={() => setShowPaywall(true)}
+                  className="shrink-0 font-light tracking-wide"
+                >
+                  Get Embers
+                </Button>
+              </motion.div>
+            </div>
+          ) : (
+            <form onSubmit={handleSend} className="max-w-3xl mx-auto relative flex items-center gap-2">
+              <Input
+                ref={inputRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  sendState === "speaking"
+                    ? `${character.name} is speaking…`
+                    : `Message ${character.name}…`
+                }
+                className={cn(
+                  "pr-14 h-12 rounded-2xl font-light text-sm transition-all duration-300",
+                  "bg-card/50 border-white/[0.08] text-white/90 placeholder:text-muted-foreground/40",
+                  "focus-visible:border-primary/30 focus-visible:ring-0",
+                  "focus-visible:shadow-[0_0_20px_-4px_hsl(var(--primary)/0.25)]",
+                )}
+                disabled={isBusy}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                variant="glow"
+                className="absolute right-1.5 h-9 w-9 rounded-xl shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)]"
+                disabled={!content.trim() || isBusy}
+              >
+                <Send className="w-4 h-4 ml-0.5" />
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

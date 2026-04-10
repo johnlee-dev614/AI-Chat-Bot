@@ -207,6 +207,7 @@ export const SendMessageResponse = zod.object({
     .describe(
       "Base64-encoded MP3 audio of the AI reply (only present on assistant messages from sendMessage)",
     ),
+  embers: zod.number().int().min(0).optional().describe("Remaining ember balance after this message"),
 });
 
 /**
@@ -295,4 +296,28 @@ export const GetAccountResponse = zod.object({
   }),
   favorites: zod.array(zod.string()),
   totalChats: zod.number(),
+});
+
+// ── Ember (credit) economy ────────────────────────────────────────────────────
+
+export const GetBalanceResponse = zod.object({
+  embers: zod.number().int().min(0),
+  trialUsed: zod.boolean(),
+});
+
+export const ClaimStarterResponse = zod.object({
+  embers: zod.number().int().min(0),
+  granted: zod.boolean(),
+  message: zod.string(),
+});
+
+export const PurchaseEmbersBody = zod.object({
+  packageId: zod.string(),
+});
+
+export const PurchaseEmbersResponse = zod.object({
+  success: zod.boolean(),
+  embers: zod.number().int().min(0).optional(),
+  message: zod.string(),
+  checkoutUrl: zod.string().optional(),
 });

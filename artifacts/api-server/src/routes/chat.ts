@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
-import { db, messagesTable } from "@workspace/db";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { db, messagesTable, usersTable, emberTransactionsTable } from "@workspace/db";
+import { eq, and, asc, desc, sql } from "drizzle-orm";
 import {
   GetChatHistoryResponse,
   SendMessageBody,
@@ -452,6 +452,22 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     "SendMessage: received",
   );
 
+  // ── 0. Ember balance check ──
+  const [balanceRow] = await db
+    .select({ embers: usersTable.embers })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.id));
+
+  if (!balanceRow || balanceRow.embers <= 0) {
+    req.log.warn({ userId: req.user.id, embers: balanceRow?.embers }, "SendMessage: no embers");
+    res.status(402).json({
+      error: "Insufficient Embers",
+      code: "no_embers",
+      embers: balanceRow?.embers ?? 0,
+    });
+    return;
+  }
+
   // ── 1. Persist user message ──
   const userMsgId = randomUUID();
   await db.insert(messagesTable).values({
@@ -504,7 +520,25 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
   const audioBase64 = await callElevenLabs(aiContent, req.log);
   req.log.info({ hasAudio: !!audioBase64 }, "SendMessage: ElevenLabs result");
 
-  // ── 5. Persist AI message ──
+  // ── 5. Deduct 1 ember (atomic decrement, floor at 0) ──
+  const [updatedUser] = await db
+    .update(usersTable)
+    .set({ embers: sql`GREATEST(${usersTable.embers} - 1, 0)` })
+    .where(eq(usersTable.id, req.user.id))
+    .returning({ embers: usersTable.embers });
+
+  await db.insert(emberTransactionsTable).values({
+    id: randomUUID(),
+    userId: req.user.id,
+    type: "debit",
+    amount: 1,
+    description: `Chat with ${characterSlug}`,
+  });
+
+  const remainingEmbers = updatedUser?.embers ?? 0;
+  req.log.info({ remainingEmbers }, "SendMessage: ember deducted");
+
+  // ── 6. Persist AI message ──
   const aiMsgId = randomUUID();
   const now = new Date();
   await db.insert(messagesTable).values({
@@ -526,6 +560,7 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
       content: aiContent,
       createdAt: now,
       audio: audioBase64,
+      embers: remainingEmbers,
     }),
   );
 });
