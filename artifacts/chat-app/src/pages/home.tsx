@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useListCharacters } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/shared/character-card";
 import { Heart, ShieldCheck, Mic } from "lucide-react";
+import { StringLights } from "@/components/shared/string-lights";
 
 export function Home() {
   const { data, isLoading } = useListCharacters();
@@ -13,6 +14,9 @@ export function Home() {
     <div className="min-h-screen bg-mesh">
       {/* Hero Section */}
       <section className="relative pt-36 pb-24 md:pt-52 md:pb-36 overflow-hidden">
+        {/* String lights — romantic ambient layer */}
+        <StringLights />
+
         {/* Ambient bedroom glows */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 blur-[130px] rounded-full" />
