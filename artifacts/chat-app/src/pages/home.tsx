@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useListCharacters } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/shared/character-card";
 import { Heart, ShieldCheck, Mic } from "lucide-react";
-import { StringLights } from "@/components/shared/string-lights";
 
 export function Home() {
   const { data, isLoading } = useListCharacters();
@@ -20,9 +19,6 @@ export function Home() {
           <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-accent/8 blur-[120px] rounded-full" />
           <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-[hsl(35_40%_35%/0.07)] blur-[100px] rounded-full" />
         </div>
-
-        {/* Romantic string lights */}
-        <StringLights />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
