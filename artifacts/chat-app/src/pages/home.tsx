@@ -14,15 +14,15 @@ export function Home() {
     <div className="min-h-screen bg-mesh">
       {/* Hero Section */}
       <section className="relative pt-36 pb-24 md:pt-52 md:pb-36 overflow-hidden">
-        {/* String lights — romantic ambient layer */}
-        <StringLights />
-
         {/* Ambient bedroom glows */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 blur-[130px] rounded-full" />
           <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-accent/8 blur-[120px] rounded-full" />
           <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-[hsl(35_40%_35%/0.07)] blur-[100px] rounded-full" />
         </div>
+
+        {/* Romantic string lights */}
+        <StringLights />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
