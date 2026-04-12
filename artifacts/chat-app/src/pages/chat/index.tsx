@@ -291,7 +291,7 @@ export function ChatView() {
         <div className="mb-5">
           <button
             onClick={() => setBioExpanded((v) => !v)}
-            className="w-full flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest mb-2 hover:text-white/50 transition-colors"
+            className="w-full flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest mb-2 hover:text-white/50 transition-colors rounded-xl px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.05] hover:border-white/[0.08]"
           >
             <span>About</span>
             <motion.span
@@ -301,19 +301,16 @@ export function ChatView() {
               <ChevronDown className="w-3 h-3" />
             </motion.span>
           </button>
-          <div
-            className="rounded-2xl bg-white/[0.03] border border-white/[0.05] cursor-pointer hover:border-white/[0.08] transition-colors overflow-hidden"
-            onClick={() => setBioExpanded((v) => !v)}
+          <motion.div
+            initial={false}
+            animate={{ height: bioExpanded ? "auto" : 0, opacity: bioExpanded ? 1 : 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
           >
-            <div
-              className={cn(
-                "p-3.5 text-xs text-muted-foreground/75 font-light leading-relaxed transition-all duration-300",
-                !bioExpanded && "line-clamp-2",
-              )}
-            >
+            <div className="pt-2 pb-0.5 px-3.5 text-xs text-muted-foreground/75 font-light leading-relaxed">
               {character.bio || character.description}
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Voice toggle */}

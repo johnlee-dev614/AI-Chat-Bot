@@ -8,6 +8,7 @@ import { characters, getCharacterBySlug } from "../config/characters";
 const router: IRouter = Router();
 
 router.get("/characters", (req: Request, res: Response) => {
+  res.set("Cache-Control", "no-store");
   const { search, tag, category } = req.query;
 
   let filtered = [...characters];
@@ -34,6 +35,7 @@ router.get("/characters", (req: Request, res: Response) => {
 });
 
 router.get("/characters/:slug", (req: Request, res: Response) => {
+  res.set("Cache-Control", "no-store");
   const character = getCharacterBySlug(req.params.slug);
   if (!character) {
     res.status(404).json({ error: "Character not found" });
