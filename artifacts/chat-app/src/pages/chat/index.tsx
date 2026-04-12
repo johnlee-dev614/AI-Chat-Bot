@@ -71,7 +71,8 @@ export function ChatView() {
   const queryClient = useQueryClient();
 
   const { data: character } = useGetCharacter(slug, {
-    query: { enabled: !!slug && isAuthenticated },
+    query: { enabled: !!slug && isAuthenticated, staleTime: 0 },
+    request: { cache: "no-store" },
   });
   const { data: chatData, isLoading: chatLoading } = useGetChatHistory(slug, {
     query: { enabled: !!slug && isAuthenticated },
