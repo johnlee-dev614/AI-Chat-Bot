@@ -291,7 +291,7 @@ export function ChatView() {
         <div className="mb-5">
           <button
             onClick={() => setBioExpanded((v) => !v)}
-            className="w-full flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest mb-2 hover:text-white/50 transition-colors group"
+            className="w-full flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest mb-2 hover:text-white/50 transition-colors"
           >
             <span>About</span>
             <motion.span
@@ -302,38 +302,17 @@ export function ChatView() {
             </motion.span>
           </button>
           <div
-            className={cn(
-              "rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden cursor-pointer hover:border-white/[0.08] transition-colors",
-            )}
+            className="rounded-2xl bg-white/[0.03] border border-white/[0.05] cursor-pointer hover:border-white/[0.08] transition-colors overflow-hidden"
             onClick={() => setBioExpanded((v) => !v)}
           >
-            <AnimatePresence initial={false}>
-              {!bioExpanded ? (
-                <motion.div
-                  key="collapsed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="p-3.5 text-xs text-muted-foreground/70 font-light leading-relaxed line-clamp-2"
-                >
-                  {character.bio || character.description}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="expanded"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-3.5 text-xs text-muted-foreground/80 font-light leading-relaxed">
-                    {character.bio || character.description}
-                  </div>
-                </motion.div>
+            <div
+              className={cn(
+                "p-3.5 text-xs text-muted-foreground/75 font-light leading-relaxed transition-all duration-300",
+                !bioExpanded && "line-clamp-2",
               )}
-            </AnimatePresence>
+            >
+              {character.bio || character.description}
+            </div>
           </div>
         </div>
 
