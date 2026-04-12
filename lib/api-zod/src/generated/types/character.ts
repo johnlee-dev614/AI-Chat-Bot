@@ -20,4 +20,20 @@ export interface Character {
   avatarUrl: string | null;
   personalityTraits: string[];
   conversationStarters: string[];
+  /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
+  gender?: string | null;
+  /** @nullable */
+  language?: string | null;
+  /** @nullable */
+  height?: string | null;
+  /** @nullable */
+  weight?: string | null;
+  /** @nullable */
+  ethnicity?: string | null;
+  /** @nullable */
+  horoscope?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
 }

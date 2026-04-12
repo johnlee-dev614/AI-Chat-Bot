@@ -501,6 +501,22 @@ components:
           type: array
           items:
             type: string
+        dateOfBirth:
+          type: [string, 'null']
+        gender:
+          type: [string, 'null']
+        language:
+          type: [string, 'null']
+        height:
+          type: [string, 'null']
+        weight:
+          type: [string, 'null']
+        ethnicity:
+          type: [string, 'null']
+        horoscope:
+          type: [string, 'null']
+        jobTitle:
+          type: [string, 'null']
 
     Message:
       type: object

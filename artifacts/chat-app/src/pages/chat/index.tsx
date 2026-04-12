@@ -10,7 +10,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ArrowLeft, ShieldAlert, Volume2, VolumeX, RefreshCw, Flame } from "lucide-react";
+import { Send, ArrowLeft, ShieldAlert, Volume2, VolumeX, RefreshCw, Flame, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -80,6 +80,7 @@ export function ChatView() {
   const [content, setContent] = useState("");
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [sendState, setSendState] = useState<SendState>("idle");
+  const [bioExpanded, setBioExpanded] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
   const [lastSentContent, setLastSentContent] = useState<string>("");
@@ -252,8 +253,88 @@ export function ChatView() {
           </p>
         </div>
 
-        <div className="rounded-2xl p-4 mb-6 text-sm text-muted-foreground/80 font-light leading-relaxed bg-white/[0.03] border border-white/[0.05]">
-          {character.bio || character.description}
+        {/* Profile fields */}
+        {(character.dateOfBirth || character.gender || character.language || character.height || character.weight || character.ethnicity || character.horoscope || character.jobTitle) && (
+          <div className="mb-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
+            {[
+              { icon: "🎂", label: "Birthday", value: character.dateOfBirth },
+              { icon: "⚧", label: "Gender", value: character.gender },
+              { icon: "🌍", label: "Language", value: character.language },
+              { icon: "📏", label: "Height", value: character.height },
+              { icon: "⚖️", label: "Weight", value: character.weight },
+              { icon: "🌺", label: "Ethnicity", value: character.ethnicity },
+              { icon: "✨", label: "Horoscope", value: character.horoscope },
+              { icon: "💼", label: "Job", value: character.jobTitle },
+            ]
+              .filter((f) => f.value)
+              .map((field, i, arr) => (
+                <div
+                  key={field.label}
+                  className={cn(
+                    "flex items-center gap-2.5 px-3.5 py-2.5",
+                    i < arr.length - 1 && "border-b border-white/[0.04]",
+                  )}
+                >
+                  <span className="text-sm shrink-0">{field.icon}</span>
+                  <span className="text-[10px] text-muted-foreground/50 font-light tracking-wide w-14 shrink-0 uppercase">
+                    {field.label}
+                  </span>
+                  <span className="text-[11px] text-white/75 font-light leading-snug text-right flex-1">
+                    {field.value}
+                  </span>
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Collapsible About/Bio */}
+        <div className="mb-5">
+          <button
+            onClick={() => setBioExpanded((v) => !v)}
+            className="w-full flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest mb-2 hover:text-white/50 transition-colors group"
+          >
+            <span>About</span>
+            <motion.span
+              animate={{ rotate: bioExpanded ? 180 : 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ChevronDown className="w-3 h-3" />
+            </motion.span>
+          </button>
+          <div
+            className={cn(
+              "rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden cursor-pointer hover:border-white/[0.08] transition-colors",
+            )}
+            onClick={() => setBioExpanded((v) => !v)}
+          >
+            <AnimatePresence initial={false}>
+              {!bioExpanded ? (
+                <motion.div
+                  key="collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="p-3.5 text-xs text-muted-foreground/70 font-light leading-relaxed line-clamp-2"
+                >
+                  {character.bio || character.description}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="expanded"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3.5 text-xs text-muted-foreground/80 font-light leading-relaxed">
+                    {character.bio || character.description}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Voice toggle */}

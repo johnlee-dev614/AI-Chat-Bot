@@ -11,7 +11,15 @@ export interface CharacterConfig {
   personalityTraits: string[];
   conversationStarters: string[];
   systemPrompt: string;
-  preferredModels?: string[]; // overrides default model rotation when set
+  preferredModels?: string[];
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  language?: string | null;
+  height?: string | null;
+  weight?: string | null;
+  ethnicity?: string | null;
+  horoscope?: string | null;
+  jobTitle?: string | null;
 }
 
 export const characters: CharacterConfig[] = [
@@ -70,6 +78,14 @@ export const characters: CharacterConfig[] = [
       "What are you up to?",
       "Convince me you're worth talking to",
     ],
+    dateOfBirth: "March 15, 2000",
+    gender: "Female",
+    language: "Spanish, English",
+    height: "5'5\" (165 cm)",
+    weight: "125 lbs (57 kg)",
+    ethnicity: "Latina / Hispanic",
+    horoscope: "Pisces ♓",
+    jobTitle: "Marketing Coordinator",
     preferredModels: [
       "meta-llama/llama-3.3-70b-instruct:free",
       "nousresearch/hermes-3-llama-3.1-405b:free",

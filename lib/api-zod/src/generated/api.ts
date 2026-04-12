@@ -118,6 +118,14 @@ export const ListCharactersResponse = zod.object({
       avatarUrl: zod.string().nullable(),
       personalityTraits: zod.array(zod.string()),
       conversationStarters: zod.array(zod.string()),
+      dateOfBirth: zod.string().nullish(),
+      gender: zod.string().nullish(),
+      language: zod.string().nullish(),
+      height: zod.string().nullish(),
+      weight: zod.string().nullish(),
+      ethnicity: zod.string().nullish(),
+      horoscope: zod.string().nullish(),
+      jobTitle: zod.string().nullish(),
     }),
   ),
 });
@@ -141,6 +149,14 @@ export const GetCharacterResponse = zod.object({
   avatarUrl: zod.string().nullable(),
   personalityTraits: zod.array(zod.string()),
   conversationStarters: zod.array(zod.string()),
+  dateOfBirth: zod.string().nullish(),
+  gender: zod.string().nullish(),
+  language: zod.string().nullish(),
+  height: zod.string().nullish(),
+  weight: zod.string().nullish(),
+  ethnicity: zod.string().nullish(),
+  horoscope: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
 });
 
 /**
