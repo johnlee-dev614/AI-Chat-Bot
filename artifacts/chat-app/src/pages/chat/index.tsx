@@ -281,37 +281,35 @@ export function ChatView() {
           </p>
         </div>
 
-        {/* Profile fields - v2 local data */}
-        {(profile.dateOfBirth || profile.gender || profile.language || profile.height || profile.weight || profile.ethnicity || profile.horoscope || profile.jobTitle) && (
+        {/* Profile fields */}
+        {slug === "isabella" && (
           <div className="mb-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
             {[
-              { icon: "🎂", label: "Birthday", value: profile.dateOfBirth },
-              { icon: "⚧", label: "Gender", value: profile.gender },
-              { icon: "🌍", label: "Language", value: profile.language },
-              { icon: "📏", label: "Height", value: profile.height },
-              { icon: "⚖️", label: "Weight", value: profile.weight },
-              { icon: "🌺", label: "Ethnicity", value: profile.ethnicity },
-              { icon: "✨", label: "Horoscope", value: profile.horoscope },
-              { icon: "💼", label: "Job", value: profile.jobTitle },
-            ]
-              .filter((f) => f.value)
-              .map((field, i, arr) => (
-                <div
-                  key={field.label}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3.5 py-2.5",
-                    i < arr.length - 1 && "border-b border-white/[0.04]",
-                  )}
-                >
-                  <span className="text-sm shrink-0">{field.icon}</span>
-                  <span className="text-[10px] text-muted-foreground/50 font-light tracking-wide w-14 shrink-0 uppercase">
-                    {field.label}
-                  </span>
-                  <span className="text-[11px] text-white/75 font-light leading-snug text-right flex-1">
-                    {field.value}
-                  </span>
-                </div>
-              ))}
+              { icon: "🎂", label: "Birthday", value: "March 15, 2000" },
+              { icon: "⚧", label: "Gender", value: "Female" },
+              { icon: "🌍", label: "Language", value: "Spanish, English" },
+              { icon: "📏", label: "Height", value: "5'5\" (165 cm)" },
+              { icon: "⚖️", label: "Weight", value: "125 lbs (57 kg)" },
+              { icon: "🌺", label: "Ethnicity", value: "Latina / Hispanic" },
+              { icon: "✨", label: "Horoscope", value: "Pisces ♓" },
+              { icon: "💼", label: "Job", value: "Marketing Coordinator" },
+            ].map((field, i, arr) => (
+              <div
+                key={field.label}
+                className={cn(
+                  "flex items-center gap-2.5 px-3.5 py-2.5",
+                  i < arr.length - 1 && "border-b border-white/[0.04]",
+                )}
+              >
+                <span className="text-sm shrink-0">{field.icon}</span>
+                <span className="text-[10px] text-muted-foreground/50 font-light tracking-wide w-14 shrink-0 uppercase">
+                  {field.label}
+                </span>
+                <span className="text-[11px] text-white/75 font-light leading-snug text-right flex-1">
+                  {field.value}
+                </span>
+              </div>
+            ))}
           </div>
         )}
 
