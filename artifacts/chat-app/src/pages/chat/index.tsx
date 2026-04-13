@@ -17,7 +17,24 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmbers } from "@/lib/ember-context";
-import { getCharacterProfile } from "@/lib/characterProfiles";
+
+// ── Static character profile data ─────────────────────────────────────────────
+const CHARACTER_PROFILES: Record<string, {
+  dateOfBirth?: string; gender?: string; language?: string;
+  height?: string; weight?: string; ethnicity?: string;
+  horoscope?: string; jobTitle?: string;
+}> = {
+  isabella: {
+    dateOfBirth: "March 15, 2000",
+    gender: "Female",
+    language: "Spanish, English",
+    height: "5'5\" (165 cm)",
+    weight: "125 lbs (57 kg)",
+    ethnicity: "Latina / Hispanic",
+    horoscope: "Pisces ♓",
+    jobTitle: "Marketing Coordinator",
+  },
+};
 
 // ── Chat state machine ────────────────────────────────────────────────────────
 type SendState = "idle" | "sending" | "thinking" | "speaking";
@@ -75,7 +92,7 @@ export function ChatView() {
     query: { enabled: !!slug && isAuthenticated, staleTime: 0, refetchOnMount: "always" },
     request: { cache: "no-store" },
   });
-  const profile = getCharacterProfile(slug);
+  const profile = CHARACTER_PROFILES[slug] ?? {};
 
   useEffect(() => {
     if (slug && isAuthenticated) {
@@ -264,7 +281,7 @@ export function ChatView() {
           </p>
         </div>
 
-        {/* Profile fields */}
+        {/* Profile fields - v2 local data */}
         {(profile.dateOfBirth || profile.gender || profile.language || profile.height || profile.weight || profile.ethnicity || profile.horoscope || profile.jobTitle) && (
           <div className="mb-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
             {[
