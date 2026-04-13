@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmbers } from "@/lib/ember-context";
+import { getCharacterProfile } from "@/lib/characterProfiles";
 
 // ── Chat state machine ────────────────────────────────────────────────────────
 type SendState = "idle" | "sending" | "thinking" | "speaking";
@@ -74,6 +75,7 @@ export function ChatView() {
     query: { enabled: !!slug && isAuthenticated, staleTime: 0, refetchOnMount: "always" },
     request: { cache: "no-store" },
   });
+  const profile = getCharacterProfile(slug);
 
   useEffect(() => {
     if (slug && isAuthenticated) {
@@ -263,17 +265,17 @@ export function ChatView() {
         </div>
 
         {/* Profile fields */}
-        {(character.dateOfBirth || character.gender || character.language || character.height || character.weight || character.ethnicity || character.horoscope || character.jobTitle) && (
+        {(profile.dateOfBirth || profile.gender || profile.language || profile.height || profile.weight || profile.ethnicity || profile.horoscope || profile.jobTitle) && (
           <div className="mb-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
             {[
-              { icon: "🎂", label: "Birthday", value: character.dateOfBirth },
-              { icon: "⚧", label: "Gender", value: character.gender },
-              { icon: "🌍", label: "Language", value: character.language },
-              { icon: "📏", label: "Height", value: character.height },
-              { icon: "⚖️", label: "Weight", value: character.weight },
-              { icon: "🌺", label: "Ethnicity", value: character.ethnicity },
-              { icon: "✨", label: "Horoscope", value: character.horoscope },
-              { icon: "💼", label: "Job", value: character.jobTitle },
+              { icon: "🎂", label: "Birthday", value: profile.dateOfBirth },
+              { icon: "⚧", label: "Gender", value: profile.gender },
+              { icon: "🌍", label: "Language", value: profile.language },
+              { icon: "📏", label: "Height", value: profile.height },
+              { icon: "⚖️", label: "Weight", value: profile.weight },
+              { icon: "🌺", label: "Ethnicity", value: profile.ethnicity },
+              { icon: "✨", label: "Horoscope", value: profile.horoscope },
+              { icon: "💼", label: "Job", value: profile.jobTitle },
             ]
               .filter((f) => f.value)
               .map((field, i, arr) => (
