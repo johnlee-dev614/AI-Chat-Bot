@@ -70,10 +70,18 @@ export function ChatView() {
   const { embers, updateEmbers, setShowPaywall } = useEmbers();
   const queryClient = useQueryClient();
 
-  const { data: character } = useGetCharacter(slug, {
-    query: { enabled: !!slug && isAuthenticated, staleTime: 0 },
+  const { data: character, refetch: refetchCharacter } = useGetCharacter(slug, {
+    query: { enabled: !!slug && isAuthenticated, staleTime: 0, refetchOnMount: "always" },
     request: { cache: "no-store" },
   });
+
+  useEffect(() => {
+    if (slug && isAuthenticated) {
+      queryClient.removeQueries({ queryKey: [`/api/characters/${slug}`] });
+      refetchCharacter();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, isAuthenticated]);
   const { data: chatData, isLoading: chatLoading } = useGetChatHistory(slug, {
     query: { enabled: !!slug && isAuthenticated },
   });
