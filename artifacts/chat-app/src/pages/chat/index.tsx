@@ -287,7 +287,6 @@ export function ChatView() {
             {[
               { icon: "🎂", label: "Birthday", value: "March 15" },
               { icon: "⚧", label: "Gender", value: "Female" },
-              { icon: "🌍", label: "Language", value: "Spanish, English" },
               { icon: "📏", label: "Height", value: "5'5\" (165 cm)" },
               { icon: "⚖️", label: "Weight", value: "125 lbs (57 kg)" },
               { icon: "🌺", label: "Ethnicity", value: "Latina / Hispanic" },
