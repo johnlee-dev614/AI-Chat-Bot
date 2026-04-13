@@ -283,7 +283,7 @@ export function ChatView() {
 
         {/* Profile fields */}
         {slug === "isabella" && (
-          <div className="mb-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
+          <div className="mb-5 shrink-0 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
             {[
               { icon: "🎂", label: "Birthday", value: "March 15, 2000" },
               { icon: "⚧", label: "Gender", value: "Female" },
