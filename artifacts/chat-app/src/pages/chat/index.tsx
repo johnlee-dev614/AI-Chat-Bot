@@ -285,7 +285,7 @@ export function ChatView() {
         {slug === "isabella" && (
           <div className="mb-5 shrink-0 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
             {[
-              { icon: "🎂", label: "Birthday", value: "March 15, 2000" },
+              { icon: "🎂", label: "Birthday", value: "March 15" },
               { icon: "⚧", label: "Gender", value: "Female" },
               { icon: "🌍", label: "Language", value: "Spanish, English" },
               { icon: "📏", label: "Height", value: "5'5\" (165 cm)" },
