@@ -35,13 +35,13 @@ artifacts/
 │       │   ├── auth.ts           # Email/password auth routes (signup, login, logout) — auto-grants 10 Embers on signup
 │       │   ├── characters.ts     # Character listing/detail
 │       │   ├── chat.ts           # Chat messages + AI (OpenRouter + ElevenLabs) — deducts 1 Ember per message
-│       │   ├── users.ts          # Favorites + account + ember balance + claim-starter
+│       │   ├── users.ts          # Favorites, account, ember balance, claim-starter, profile update, transactions
 │       │   └── payments.ts       # Payment placeholder (503) + GET /api/payments/packages
 │       ├── lib/auth.ts           # Session management
 │       └── middlewares/authMiddleware.ts
 └── chat-app/            # React + Vite frontend
     └── src/
-        ├── pages/        # Route pages
+        ├── pages/        # Route pages (home, characters, chat, account, settings, help, billing)
         ├── components/   # Shared components
         │   ├── layout/   # Navbar (with Ember balance pill), Footer
         │   ├── paywall/  # EmberPaywallModal

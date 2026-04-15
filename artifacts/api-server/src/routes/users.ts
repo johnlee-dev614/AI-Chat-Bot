@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, favoritesTable, messagesTable, usersTable, emberTransactionsTable } from "@workspace/db";
-import { eq, and, countDistinct } from "drizzle-orm";
+import { eq, and, countDistinct, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
   GetFavoritesResponse,
@@ -9,6 +9,10 @@ import {
   GetAccountResponse,
   GetBalanceResponse,
   ClaimStarterResponse,
+  UpdateProfileBody,
+  UpdateProfileResponse,
+  GetTransactionsResponse,
+  GetProfileResponse,
 } from "@workspace/api-zod";
 
 const STARTER_PACK_EMBERS = 10;
@@ -137,6 +141,69 @@ router.post("/users/claim-starter", async (req: Request, res: Response) => {
       message: `Welcome! ${STARTER_PACK_EMBERS} Embers added to your account.`,
     }),
   );
+});
+
+// ── GET /api/users/profile ─────────────────────────────────────────────────────
+router.get("/users/profile", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const [user] = await db
+    .select({ id: usersTable.id, email: usersTable.email, displayName: usersTable.displayName, username: usersTable.username })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.id));
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json(GetProfileResponse.parse({ ...user }));
+});
+
+// ── PATCH /api/users/profile ───────────────────────────────────────────────────
+router.patch("/users/profile", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const parsed = UpdateProfileBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }); return; }
+
+  const { displayName, username } = parsed.data;
+
+  if (username) {
+    const [existing] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.username, username));
+    if (existing && existing.id !== req.user.id) {
+      res.status(409).json({ error: "Username is already taken" });
+      return;
+    }
+  }
+
+  const updates: Record<string, string | undefined> = {};
+  if (displayName !== undefined) updates.displayName = displayName;
+  if (username !== undefined) updates.username = username;
+
+  const [updated] = await db
+    .update(usersTable)
+    .set(updates)
+    .where(eq(usersTable.id, req.user.id))
+    .returning({ id: usersTable.id, email: usersTable.email, displayName: usersTable.displayName, username: usersTable.username });
+
+  res.json(UpdateProfileResponse.parse({ success: true, user: updated }));
+});
+
+// ── GET /api/users/transactions ────────────────────────────────────────────────
+router.get("/users/transactions", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const rows = await db
+    .select()
+    .from(emberTransactionsTable)
+    .where(eq(emberTransactionsTable.userId, req.user.id))
+    .orderBy(desc(emberTransactionsTable.createdAt))
+    .limit(50);
+  const transactions = rows.map((r) => ({
+    id: r.id,
+    type: r.type as "credit" | "debit",
+    amount: r.amount,
+    description: r.description ?? null,
+    createdAt: r.createdAt.toISOString(),
+  }));
+  res.json(GetTransactionsResponse.parse({ transactions }));
 });
 
 // ── GET /api/users/account ────────────────────────────────────────────────────

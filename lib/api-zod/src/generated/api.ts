@@ -337,3 +337,43 @@ export const PurchaseEmbersResponse = zod.object({
   message: zod.string(),
   checkoutUrl: zod.string().optional(),
 });
+
+// ── User profile update ───────────────────────────────────────────────────────
+
+export const UpdateProfileBody = zod.object({
+  displayName: zod.string().min(1).max(100).optional(),
+  username: zod.string().min(3).max(50).regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores").optional(),
+});
+
+export const UpdateProfileResponse = zod.object({
+  success: zod.boolean(),
+  user: zod.object({
+    id: zod.string(),
+    email: zod.string().nullable(),
+    displayName: zod.string().nullable(),
+    username: zod.string().nullable(),
+  }),
+});
+
+// ── Ember transaction history ─────────────────────────────────────────────────
+
+export const EmberTransactionSchema = zod.object({
+  id: zod.string(),
+  type: zod.enum(["credit", "debit"]),
+  amount: zod.number().int(),
+  description: zod.string().nullable(),
+  createdAt: zod.string(),
+});
+
+export const GetTransactionsResponse = zod.object({
+  transactions: zod.array(EmberTransactionSchema),
+});
+
+// ── User profile (with username) ──────────────────────────────────────────────
+
+export const GetProfileResponse = zod.object({
+  id: zod.string(),
+  email: zod.string().nullable(),
+  displayName: zod.string().nullable(),
+  username: zod.string().nullable(),
+});

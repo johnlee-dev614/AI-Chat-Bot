@@ -137,3 +137,37 @@ export type GetChatHistory200 = {
 export type GetFavorites200 = {
   favorites: string[];
 };
+
+export interface UpdateProfileRequest {
+  displayName?: string;
+  username?: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  user: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    username: string | null;
+  };
+}
+
+export interface EmberTransaction {
+  id: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface GetTransactionsResponse {
+  transactions: EmberTransaction[];
+}
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  username: string | null;
+}

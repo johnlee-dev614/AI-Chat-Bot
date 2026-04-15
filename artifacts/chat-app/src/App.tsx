@@ -17,6 +17,9 @@ import { Directory } from "@/pages/characters";
 import { CharacterProfile } from "@/pages/characters/profile";
 import { ChatView } from "@/pages/chat";
 import { Account } from "@/pages/account";
+import { Settings } from "@/pages/settings";
+import { Help } from "@/pages/help";
+import { Billing } from "@/pages/billing";
 import { Login } from "@/pages/login";
 import { Terms } from "@/pages/terms";
 import NotFound from "@/pages/not-found";
@@ -49,6 +52,9 @@ function AppContent() {
               <Route path="/characters" component={Directory} />
               <Route path="/characters/:slug" component={CharacterProfile} />
               <Route path="/account" component={Account} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/help" component={Help} />
+              <Route path="/billing" component={Billing} />
               <Route path="/login" component={Login} />
               <Route path="/signup" component={Login} />
               <Route path="/terms" component={Terms} />

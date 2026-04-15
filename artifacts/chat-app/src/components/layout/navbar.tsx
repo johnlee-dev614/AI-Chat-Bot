@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { User, LogOut, Menu, X, Flame } from "lucide-react";
+import { User, LogOut, Menu, X, Flame, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useState, useEffect } from "react";
@@ -22,7 +22,13 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/characters", label: "Discover" },
-    ...(isAuthenticated ? [{ href: "/account", label: "My Account" }] : []),
+    ...(isAuthenticated
+      ? [
+          { href: "/account", label: "My Account" },
+          { href: "/settings", label: "Settings" },
+          { href: "/help", label: "Help" },
+        ]
+      : []),
   ];
 
   return (
@@ -80,15 +86,38 @@ export function Navbar() {
                     <span>{embers}</span>
                   </button>
                 )}
-                <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors duration-300">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary/80" />
+                <div className="relative group">
+                  <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors duration-300">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary/80" />
+                    </div>
+                    <span className="font-light">{user?.displayName || "Account"}</span>
+                  </Link>
+                  <div className="absolute right-0 top-full mt-2 w-44 py-1.5 rounded-2xl bg-background/95 backdrop-blur-2xl border border-white/[0.08] shadow-2xl shadow-black/50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                    <Link href="/settings">
+                      <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer rounded-xl mx-1">
+                        <Settings className="w-3.5 h-3.5" /> Settings
+                      </div>
+                    </Link>
+                    <Link href="/billing">
+                      <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer rounded-xl mx-1">
+                        <Flame className="w-3.5 h-3.5" /> Buy Embers
+                      </div>
+                    </Link>
+                    <Link href="/help">
+                      <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer rounded-xl mx-1">
+                        <HelpCircle className="w-3.5 h-3.5" /> Help
+                      </div>
+                    </Link>
+                    <div className="h-px bg-white/[0.06] mx-3 my-1.5" />
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/40 hover:text-rose-400 hover:bg-rose-500/[0.05] transition-colors rounded-xl mx-0"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Log Out
+                    </button>
                   </div>
-                  <span className="font-light">{user?.displayName || "Account"}</span>
-                </Link>
-                <Button variant="ghost" size="icon" onClick={logout} title="Log out">
-                  <LogOut className="w-4 h-4 text-muted-foreground" />
-                </Button>
+                </div>
               </div>
             ) : (
               <Button variant="glow" onClick={login} className="font-light tracking-wide">

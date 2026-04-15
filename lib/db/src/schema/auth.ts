@@ -16,6 +16,7 @@ export const usersTable = pgTable("users", {
   email: varchar("email").unique(),
   passwordHash: varchar("password_hash"),
   displayName: varchar("display_name", { length: 100 }),
+  username: varchar("username", { length: 50 }).unique(),
 
   // Legacy Replit Auth fields — kept for backward compat, may be null for email-auth users
   firstName: varchar("first_name"),

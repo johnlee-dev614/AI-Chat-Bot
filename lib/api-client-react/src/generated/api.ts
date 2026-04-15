@@ -23,6 +23,7 @@ import type {
   ErrorEnvelope,
   GetChatHistory200,
   GetFavorites200,
+  GetTransactionsResponse,
   HealthStatus,
   ListCharacters200,
   ListCharactersParams,
@@ -31,6 +32,9 @@ import type {
   Message,
   SendMessageRequest,
   SignupRequest,
+  UpdateProfileRequest,
+  UpdateProfileResponse,
+  UserProfile,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1200,4 +1204,94 @@ export function useGetAccount<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// ── GET /api/users/profile ────────────────────────────────────────────────────
+
+export const getUserProfileUrl = () => `/api/users/profile`;
+
+export const getUserProfile = async (options?: RequestInit): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getUserProfileUrl(), { ...options, method: "GET" });
+};
+
+export const getGetUserProfileQueryKey = () => [`/api/users/profile`] as const;
+
+export function useGetUserProfile<
+  TData = Awaited<ReturnType<typeof getUserProfile>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getUserProfile>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetUserProfileQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserProfile>>> = ({ signal }) =>
+    getUserProfile({ signal, ...requestOptions });
+  const q = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  q.queryKey = queryKey;
+  return q;
+}
+
+// ── PATCH /api/users/profile ──────────────────────────────────────────────────
+
+export const updateProfileUrl = () => `/api/users/profile`;
+
+export const updateProfile = async (
+  data: UpdateProfileRequest,
+  options?: RequestInit,
+): Promise<UpdateProfileResponse> => {
+  return customFetch<UpdateProfileResponse>(updateProfileUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(data),
+  });
+};
+
+export const useUpdateProfile = <TError = ErrorType<ErrorEnvelope>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProfile>>,
+    TError,
+    { data: UpdateProfileRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProfile>>,
+  TError,
+  { data: UpdateProfileRequest },
+  TContext
+> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProfile>>,
+    { data: UpdateProfileRequest }
+  > = ({ data }) => updateProfile(data, requestOptions);
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+// ── GET /api/users/transactions ───────────────────────────────────────────────
+
+export const getTransactionsUrl = () => `/api/users/transactions`;
+
+export const getTransactions = async (options?: RequestInit): Promise<GetTransactionsResponse> => {
+  return customFetch<GetTransactionsResponse>(getTransactionsUrl(), { ...options, method: "GET" });
+};
+
+export const getGetTransactionsQueryKey = () => [`/api/users/transactions`] as const;
+
+export function useGetTransactions<
+  TData = Awaited<ReturnType<typeof getTransactions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetTransactionsQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactions>>> = ({ signal }) =>
+    getTransactions({ signal, ...requestOptions });
+  const q = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  q.queryKey = queryKey;
+  return q;
 }
