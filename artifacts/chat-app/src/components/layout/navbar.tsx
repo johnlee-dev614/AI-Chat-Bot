@@ -20,16 +20,14 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { href: "/characters", label: "Discover" },
-    ...(isAuthenticated
-      ? [
-          { href: "/account", label: "My Account" },
-          { href: "/settings", label: "Settings" },
-          { href: "/help", label: "Help" },
-        ]
-      : []),
-  ];
+  const navLinks = isAuthenticated
+    ? [
+        { href: "/characters", label: "Discover" },
+        { href: "/account", label: "My Account" },
+        { href: "/settings", label: "Settings" },
+        { href: "/help", label: "Help" },
+      ]
+    : [];
 
   return (
     <>
