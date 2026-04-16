@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -36,6 +37,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (isLoading) {
     return (
@@ -53,8 +55,14 @@ function AppContent() {
     return (
       <div className="flex min-h-screen bg-background text-foreground">
         <AgeGate />
-        <LeftSidebar />
-        <main className="flex-1 ml-56 min-h-screen bg-mesh">
+        <LeftSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(c => !c)}
+        />
+        <main
+          className="flex-1 min-h-screen bg-mesh transition-[margin-left] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+          style={{ marginLeft: sidebarCollapsed ? 56 : 224 }}
+        >
           <Switch>
             <Route path="/chat/:slug" component={ChatView} />
             <Route>
