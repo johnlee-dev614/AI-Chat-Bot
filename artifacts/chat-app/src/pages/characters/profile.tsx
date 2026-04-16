@@ -62,8 +62,8 @@ export function CharacterProfile() {
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-primary/8 blur-[130px] rounded-full" />
-        <div className="absolute bottom-1/3 left-1/3 w-[300px] h-[300px] bg-accent/6 blur-[120px] rounded-full" />
+        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-primary/8 blur-[130px] rounded-full animate-glow-breathe" />
+        <div className="absolute bottom-1/3 left-1/3 w-[300px] h-[300px] bg-accent/6 blur-[120px] rounded-full animate-glow-breathe-alt" />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,7 +85,7 @@ export function CharacterProfile() {
 
           <div className="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
             {/* Avatar */}
-            <div className="shrink-0 relative">
+            <div className="shrink-0 relative animate-float">
               <Avatar
                 src={character.avatarUrl}
                 name={character.name}
@@ -95,7 +95,7 @@ export function CharacterProfile() {
               <div className={cn(
                 "absolute bottom-4 right-4 w-5 h-5 rounded-full border-4 border-card",
                 character.isOnline
-                  ? "bg-emerald-400/80 shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+                  ? "bg-emerald-400/80 animate-pulse-warm"
                   : "bg-white/20",
               )} />
             </div>

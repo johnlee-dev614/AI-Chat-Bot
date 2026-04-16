@@ -15,16 +15,16 @@ export function Home() {
       <section className="relative pt-36 pb-24 md:pt-52 md:pb-36 overflow-hidden">
         {/* Ambient bedroom glows */}
         <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 blur-[130px] rounded-full" />
-          <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-accent/8 blur-[120px] rounded-full" />
-          <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-[hsl(35_40%_35%/0.07)] blur-[100px] rounded-full" />
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 blur-[130px] rounded-full animate-glow-breathe" />
+          <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-accent/8 blur-[120px] rounded-full animate-glow-breathe-alt" />
+          <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-[hsl(35_40%_35%/0.07)] blur-[100px] rounded-full animate-glow-breathe-slow" />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             {/* Soft badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/8 border border-primary/15 text-sm font-light text-primary/90 mb-10 backdrop-blur-sm tracking-widest uppercase">

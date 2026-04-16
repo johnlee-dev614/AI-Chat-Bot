@@ -144,8 +144,8 @@ export function Billing() {
   return (
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-amber-500/5 blur-[160px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-primary/5 blur-[140px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-amber-500/5 blur-[160px] rounded-full animate-glow-breathe-alt" />
+        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-primary/5 blur-[140px] rounded-full animate-glow-breathe-slow" />
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6">
@@ -182,12 +182,17 @@ export function Billing() {
             <h2 className="text-[11px] text-white/40 uppercase tracking-widest font-light mb-5">Choose a Package</h2>
 
             <div className="space-y-3">
-              {packages.map((pkg) => {
+              {packages.map((pkg, pkgIdx) => {
                 const Icon = PACKAGE_ICONS[pkg.id] ?? Flame;
                 const isSelected = selected === pkg.id;
                 return (
-                  <button
+                  <motion.div
                     key={pkg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + pkgIdx * 0.06, duration: 0.4, ease: "easeOut" }}
+                  >
+                  <button
                     onClick={() => setSelected(pkg.id)}
                     className={cn(
                       "w-full flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all text-left",
@@ -229,6 +234,7 @@ export function Billing() {
                       <CheckCircle className="w-4 h-4 text-primary shrink-0 ml-1" />
                     )}
                   </button>
+                  </motion.div>
                 );
               })}
             </div>

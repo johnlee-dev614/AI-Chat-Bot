@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export function CharacterCard({ character }: { character: Character }) {
   const { isAuthenticated, login } = useAuth();
@@ -48,14 +49,21 @@ export function CharacterCard({ character }: { character: Character }) {
 
   return (
     <Link href={`/characters/${character.slug}`}>
-      <div className="group relative bg-card/60 border border-white/[0.06] rounded-3xl overflow-hidden hover:border-primary/25 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_16px_48px_-12px_hsl(var(--primary)/0.2)] hover:bg-card/80">
+      <motion.div
+        whileHover={{ y: -7, scale: 1.012 }}
+        transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="group relative bg-card/60 border border-white/[0.06] rounded-3xl overflow-hidden hover:border-primary/25 transition-colors duration-500 hover:shadow-[0_20px_56px_-14px_hsl(var(--primary)/0.22)] hover:bg-card/80"
+      >
         {/* Ambient inner glow on hover */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none bg-gradient-to-b from-primary/[0.04] to-transparent" />
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none bg-gradient-to-b from-primary/[0.05] to-transparent" />
 
         {/* Favorite button */}
         <div className="absolute top-4 right-4 z-10">
-          <button
+          <motion.button
             onClick={toggleFavorite}
+            whileTap={{ scale: 0.85 }}
+            whileHover={{ scale: 1.15 }}
+            transition={{ duration: 0.18 }}
             className={cn(
               "w-8 h-8 rounded-full bg-background/60 backdrop-blur-md flex items-center justify-center border transition-all duration-300",
               isFavorite
@@ -64,8 +72,13 @@ export function CharacterCard({ character }: { character: Character }) {
             )}
             disabled={addFav.isPending || removeFav.isPending}
           >
-            <Heart className={cn("w-3.5 h-3.5", isFavorite && "fill-current")} />
-          </button>
+            <motion.div
+              animate={isFavorite ? { scale: [1, 1.35, 1] } : {}}
+              transition={{ duration: 0.4 }}
+            >
+              <Heart className={cn("w-3.5 h-3.5", isFavorite && "fill-current")} />
+            </motion.div>
+          </motion.button>
         </div>
 
         <div className="p-7 flex flex-col items-center text-center">
@@ -80,7 +93,7 @@ export function CharacterCard({ character }: { character: Character }) {
             <div className={cn(
               "absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full border-2 border-card",
               character.isOnline
-                ? "bg-emerald-400/80 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                ? "bg-emerald-400/80 animate-pulse-warm"
                 : "bg-white/20"
             )} />
           </div>
@@ -108,7 +121,7 @@ export function CharacterCard({ character }: { character: Character }) {
             <span className="tracking-wide">Enter Room</span>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Link>
   );
 }

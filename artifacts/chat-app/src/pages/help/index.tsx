@@ -121,7 +121,7 @@ export function Help() {
   return (
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/6 blur-[160px] rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/6 blur-[160px] rounded-full animate-glow-breathe" />
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6">

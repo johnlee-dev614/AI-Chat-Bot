@@ -25,19 +25,24 @@ export function Directory() {
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[130px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent/6 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[130px] rounded-full animate-glow-breathe" />
+        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent/6 blur-[120px] rounded-full animate-glow-breathe-alt" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center md:text-left">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="mb-12 text-center md:text-left"
+        >
           <h1 className="text-4xl md:text-5xl font-display font-semibold text-white/90 italic mb-3">
             Discover
           </h1>
           <p className="text-muted-foreground font-light tracking-wide">
             Find your perfect companion from our curated room.
           </p>
-        </div>
+        </motion.div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-10 items-center">
           <div className="relative w-full md:w-80">

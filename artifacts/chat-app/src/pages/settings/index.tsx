@@ -113,8 +113,8 @@ export function Settings() {
   return (
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[140px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-accent/5 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[140px] rounded-full animate-glow-breathe" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-accent/5 blur-[120px] rounded-full animate-glow-breathe-alt" />
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6">

@@ -34,8 +34,8 @@ export function Account() {
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-primary/7 blur-[140px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent/5 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-primary/7 blur-[140px] rounded-full animate-glow-breathe" />
+        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent/5 blur-[120px] rounded-full animate-glow-breathe-alt" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

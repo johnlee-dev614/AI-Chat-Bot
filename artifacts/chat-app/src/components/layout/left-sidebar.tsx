@@ -19,7 +19,12 @@ export function LeftSidebar() {
   const { embers, setShowPaywall } = useEmbers();
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-56 flex flex-col z-40 border-r border-white/[0.06] bg-background/80 backdrop-blur-2xl">
+    <motion.aside
+      initial={{ opacity: 0, x: -14 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="fixed top-0 left-0 h-screen w-56 flex flex-col z-40 border-r border-white/[0.06] bg-background/80 backdrop-blur-2xl"
+    >
       {/* Logo */}
       <div className="px-5 pt-5 pb-3">
         <Link href="/">
@@ -101,6 +106,6 @@ export function LeftSidebar() {
           <span>Log Out</span>
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
