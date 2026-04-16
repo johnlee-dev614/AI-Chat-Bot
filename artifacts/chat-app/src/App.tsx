@@ -54,7 +54,7 @@ function AppContent() {
       <div className="flex min-h-screen bg-background text-foreground">
         <AgeGate />
         <LeftSidebar />
-        <main className="flex-1 ml-56 min-h-screen">
+        <main className="flex-1 ml-56 min-h-screen bg-mesh">
           <Switch>
             <Route path="/chat/:slug" component={ChatView} />
             <Route>
