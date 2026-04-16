@@ -21,7 +21,7 @@ export function LeftSidebar() {
   return (
     <aside className="fixed top-0 left-0 h-screen w-56 flex flex-col z-40 border-r border-white/[0.06] bg-background/80 backdrop-blur-2xl">
       {/* Logo */}
-      <div className="px-5 pt-6 pb-4 border-b border-white/[0.05]">
+      <div className="px-5 pt-5 pb-3">
         <Link href="/">
           <img
             src="/wordmark.png"
@@ -32,7 +32,7 @@ export function LeftSidebar() {
       </div>
 
       {/* Nav Links */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 pt-2 pb-4 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = location === href || location.startsWith(href + "/");
           return (

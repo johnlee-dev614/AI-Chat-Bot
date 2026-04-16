@@ -58,7 +58,7 @@ function AppContent() {
           <Switch>
             <Route path="/chat/:slug" component={ChatView} />
             <Route>
-              <div className="pt-8 pb-16">
+              <div className="pb-16">
                 <Switch>
                   <Route path="/" component={Home} />
                   <Route path="/characters" component={Directory} />
