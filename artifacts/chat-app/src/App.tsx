@@ -35,7 +35,19 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex gap-1">
+          {[0, 0.18, 0.36].map((d, i) => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${d}s` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return (
