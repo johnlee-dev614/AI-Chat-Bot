@@ -43,7 +43,7 @@ export function CharacterProfile() {
 
   if (isLoading)
     return (
-      <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="min-h-screen pt-0 flex items-center justify-center">
         <div className="flex gap-1">
           {[0, 0.18, 0.36].map((d, i) => (
             <div key={i} className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${d}s` }} />
@@ -53,13 +53,13 @@ export function CharacterProfile() {
     );
   if (isError || !character)
     return (
-      <div className="min-h-screen pt-24 text-center text-muted-foreground font-light italic">
+      <div className="min-h-screen pt-0 text-center text-muted-foreground font-light italic">
         Character not found
       </div>
     );
 
   return (
-    <div className="min-h-screen pt-20 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-primary/8 blur-[130px] rounded-full" />

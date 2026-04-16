@@ -64,7 +64,7 @@ export function Settings() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-24 flex flex-col items-center justify-center gap-6">
+      <div className="min-h-screen pt-0 flex flex-col items-center justify-center gap-6">
         <p className="text-muted-foreground font-light italic">Sign in to manage your settings.</p>
         <Button variant="glow" onClick={login}>Sign In</Button>
       </div>
@@ -73,7 +73,7 @@ export function Settings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="min-h-screen pt-0 flex items-center justify-center">
         <div className="flex gap-1">
           {[0, 0.18, 0.36].map((d, i) => (
             <div key={i} className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${d}s` }} />
@@ -111,7 +111,7 @@ export function Settings() {
   const latestPurchase = transactions.find((t) => t.type === "credit");
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[140px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-accent/5 blur-[120px] rounded-full" />

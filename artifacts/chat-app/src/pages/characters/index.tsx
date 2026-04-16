@@ -22,7 +22,7 @@ export function Directory() {
   });
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/7 blur-[130px] rounded-full" />

@@ -119,7 +119,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export function Help() {
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/6 blur-[160px] rounded-full" />
       </div>

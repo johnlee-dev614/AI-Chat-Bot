@@ -245,7 +245,7 @@ export function ChatView() {
   if (!isAuthenticated || !character) return <div className="h-screen bg-background" />;
 
   return (
-    <div className="h-screen pt-[72px] flex flex-col md:flex-row bg-background overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-background overflow-hidden">
 
       {/* ── Left Sidebar (desktop) ─────────────────────────────────────────── */}
       <div className="hidden md:flex w-72 flex-col border-r border-white/[0.06] bg-card/30 backdrop-blur-xl p-6 overflow-y-auto">

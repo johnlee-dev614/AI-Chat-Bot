@@ -132,7 +132,7 @@ export function Billing() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-24 flex flex-col items-center justify-center gap-6">
+      <div className="min-h-screen pt-0 flex flex-col items-center justify-center gap-6">
         <p className="text-muted-foreground font-light italic">Sign in to purchase Embers.</p>
         <Button variant="glow" onClick={login}>Sign In</Button>
       </div>
@@ -142,7 +142,7 @@ export function Billing() {
   const selectedPkg = packages.find((p) => p.id === selected);
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-amber-500/5 blur-[160px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-primary/5 blur-[140px] rounded-full" />

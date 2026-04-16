@@ -75,7 +75,7 @@ const sections = [
 
 export function Terms() {
   return (
-    <div className="min-h-screen pt-24 pb-24 bg-mesh">
+    <div className="min-h-screen pt-0 pb-24 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-primary/6 blur-[160px] rounded-full" />

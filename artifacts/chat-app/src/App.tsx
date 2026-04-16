@@ -2,12 +2,13 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@workspace/replit-auth-web";
+import { AuthProvider, useAuth } from "@workspace/replit-auth-web";
 import { EmberProvider } from "@/lib/ember-context";
 import { EmberPaywallModal } from "@/components/paywall/EmberModal";
 
 // Layout & Shared
 import { Navbar } from "@/components/layout/navbar";
+import { LeftSidebar } from "@/components/layout/left-sidebar";
 import { Footer } from "@/components/layout/footer";
 import { AgeGate } from "@/components/shared/age-gate";
 
@@ -34,36 +35,53 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return (
+      <div className="flex min-h-screen bg-background text-foreground">
+        <AgeGate />
+        <LeftSidebar />
+        <main className="flex-1 ml-56 min-h-screen">
+          <Switch>
+            <Route path="/chat/:slug" component={ChatView} />
+            <Route>
+              <div className="pt-8 pb-16">
+                <Switch>
+                  <Route path="/" component={Home} />
+                  <Route path="/characters" component={Directory} />
+                  <Route path="/characters/:slug" component={CharacterProfile} />
+                  <Route path="/account" component={Account} />
+                  <Route path="/settings" component={Settings} />
+                  <Route path="/help" component={Help} />
+                  <Route path="/billing" component={Billing} />
+                  <Route path="/terms" component={Terms} />
+                  <Route component={NotFound} />
+                </Switch>
+              </div>
+            </Route>
+          </Switch>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-background text-foreground flex flex-col">
       <AgeGate />
-      
-      {/* Hide navbar/footer on specific routes like chat where we want a full screen app feel */}
-      <Switch>
-        <Route path="/chat/:slug">
-          <Navbar />
-          <ChatView />
-        </Route>
-        <Route>
-          <Navbar />
-          <main className="flex-1">
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/characters" component={Directory} />
-              <Route path="/characters/:slug" component={CharacterProfile} />
-              <Route path="/account" component={Account} />
-              <Route path="/settings" component={Settings} />
-              <Route path="/help" component={Help} />
-              <Route path="/billing" component={Billing} />
-              <Route path="/login" component={Login} />
-              <Route path="/signup" component={Login} />
-              <Route path="/terms" component={Terms} />
-              <Route component={NotFound} />
-            </Switch>
-          </main>
-          <Footer />
-        </Route>
-      </Switch>
+      <Navbar />
+      <main className="flex-1 pt-24">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/characters" component={Directory} />
+          <Route path="/characters/:slug" component={CharacterProfile} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={Login} />
+          <Route path="/terms" component={Terms} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+      <Footer />
     </div>
   );
 }

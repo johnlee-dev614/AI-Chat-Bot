@@ -11,14 +11,14 @@ export function Account() {
 
   if (!isAuthenticated)
     return (
-      <div className="min-h-screen pt-24 text-center text-muted-foreground font-light italic">
+      <div className="min-h-screen pt-0 text-center text-muted-foreground font-light italic">
         Please sign in to view your account.
       </div>
     );
 
   if (isLoading)
     return (
-      <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="min-h-screen pt-0 flex items-center justify-center">
         <div className="flex gap-1">
           {[0, 0.18, 0.36].map((d, i) => (
             <div key={i} className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${d}s` }} />
@@ -31,7 +31,7 @@ export function Account() {
   const favoriteChars = allChars.filter(c => accountData?.favorites?.includes(c.slug));
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-mesh">
+    <div className="min-h-screen pt-0 pb-20 bg-mesh">
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-primary/7 blur-[140px] rounded-full" />
