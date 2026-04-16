@@ -5,14 +5,18 @@ import { useListCharacters } from "@workspace/api-client-react";
 import { CharacterCard } from "@/components/shared/character-card";
 import { Heart, ShieldCheck, Mic } from "lucide-react";
 
+// Shared easing used throughout the site
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
 export function Home() {
   const { data, isLoading } = useListCharacters();
   const featured = data?.characters?.slice(0, 3) || [];
 
   return (
     <div className="min-h-screen bg-mesh">
-      {/* Hero Section */}
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 md:pt-52 md:pb-36 overflow-hidden">
+
         {/* Ambient bedroom glows */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 blur-[130px] rounded-full animate-glow-breathe" />
@@ -21,48 +25,89 @@ export function Home() {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+
+          {/* Badge — arrives first */}
           <motion.div
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ delay: 0.08, duration: 0.75, ease }}
           >
-            {/* Soft badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/8 border border-primary/15 text-sm font-light text-primary/90 mb-10 backdrop-blur-sm tracking-widest uppercase">
               your late-night companion
             </div>
+          </motion.div>
 
-            <h1 className="text-5xl md:text-7xl font-display font-semibold text-white/90 mb-7 leading-[1.15]">
-              Someone is always{" "}
-              <span className="italic text-glow bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-accent/80">
-                here for you.
-              </span>
-            </h1>
+          {/* Headline — arrives second, longer travel */}
+          <motion.h1
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 1.0, ease }}
+            className="text-5xl md:text-7xl font-display font-semibold text-white/90 mb-7 leading-[1.15]"
+          >
+            Someone is always{" "}
+            <span className="italic text-glow bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-accent/80 animate-gradient-drift">
+              here for you.
+            </span>
+          </motion.h1>
 
-            <p className="text-base md:text-lg text-muted-foreground font-light max-w-xl mx-auto mb-12 leading-relaxed">
-              Step into quiet, intimate conversations with AI companions who remember you,
-              hear you in their own voice, and meet you exactly where you are.
-            </p>
+          {/* Paragraph — arrives third */}
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.44, duration: 0.85, ease }}
+            className="text-base md:text-lg text-muted-foreground font-light max-w-xl mx-auto mb-12 leading-relaxed"
+          >
+            Step into quiet, intimate conversations with AI companions who remember you,
+            hear you in their own voice, and meet you exactly where you are.
+          </motion.p>
 
+          {/* CTA button — arrives last with polished hover */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.64, duration: 0.8, ease }}
+          >
             <Link href="/characters">
-              <Button
-                variant="glow"
-                size="lg"
-                className="text-sm font-light tracking-widest uppercase h-13 px-10 rounded-full shadow-[0_0_40px_-8px_hsl(var(--primary)/0.5)]"
+              <motion.div
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.2, ease }}
+                className="inline-block"
               >
-                Meet Your Companions
-              </Button>
+                <Button
+                  variant="glow"
+                  size="lg"
+                  className="text-sm font-light tracking-widest uppercase h-13 px-10 rounded-full shadow-[0_0_40px_-8px_hsl(var(--primary)/0.5)]"
+                >
+                  Meet Your Companions
+                </Button>
+              </motion.div>
             </Link>
           </motion.div>
+
         </div>
       </section>
 
-      {/* Soft divider */}
-      <div className="h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      {/* Soft divider — draws in from center after hero settles */}
+      <motion.div
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, opacity: 1 }}
+        transition={{ delay: 0.9, duration: 0.9, ease }}
+        className="h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-white/[0.06] to-transparent origin-center"
+      />
 
-      {/* Featured Characters */}
+      {/* ── Featured Characters ───────────────────────────────────────── */}
       <section className="py-20 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-12">
+
+          {/* Section header */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease }}
+            className="flex items-end justify-between mb-12"
+          >
             <div>
               <h2 className="text-3xl md:text-4xl font-display font-semibold text-white/90 mb-3">
                 Who's waiting{" "}
@@ -77,7 +122,7 @@ export function Home() {
                 View All
               </Button>
             </Link>
-          </div>
+          </motion.div>
 
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -112,20 +157,25 @@ export function Home() {
       {/* Soft divider */}
       <div className="h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
-      {/* Features */}
+      {/* ── Features ─────────────────────────────────────────────────── */}
       <section className="py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
               className="text-center"
             >
-              <div className="w-14 h-14 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/15">
+              <motion.div
+                whileHover={{ scale: 1.1, y: -3 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="w-14 h-14 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/15"
+              >
                 <Heart className="w-6 h-6 text-primary/80" />
-              </div>
+              </motion.div>
               <h3 className="font-display text-xl font-semibold text-white/90 mb-3">Emotionally Present</h3>
               <p className="text-muted-foreground font-light leading-relaxed text-sm">
                 Each companion holds the texture of your conversations — present, patient, and genuinely attentive.
@@ -136,12 +186,16 @@ export function Home() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.7 }}
+              transition={{ delay: 0.1, duration: 0.7, ease: "easeOut" }}
               className="text-center"
             >
-              <div className="w-14 h-14 mx-auto bg-accent/10 rounded-2xl flex items-center justify-center mb-6 border border-accent/15">
+              <motion.div
+                whileHover={{ scale: 1.1, y: -3 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="w-14 h-14 mx-auto bg-accent/10 rounded-2xl flex items-center justify-center mb-6 border border-accent/15"
+              >
                 <ShieldCheck className="w-6 h-6 text-accent/80" />
-              </div>
+              </motion.div>
               <h3 className="font-display text-xl font-semibold text-white/90 mb-3">Private & Sacred</h3>
               <p className="text-muted-foreground font-light leading-relaxed text-sm">
                 Your conversations belong to you alone. What happens in your room, stays in your room.
@@ -152,17 +206,22 @@ export function Home() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.7 }}
+              transition={{ delay: 0.2, duration: 0.7, ease: "easeOut" }}
               className="text-center"
             >
-              <div className="w-14 h-14 mx-auto bg-[hsl(35_40%_40%/0.12)] rounded-2xl flex items-center justify-center mb-6 border border-[hsl(35_40%_60%/0.15)]">
+              <motion.div
+                whileHover={{ scale: 1.1, y: -3 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="w-14 h-14 mx-auto bg-[hsl(35_40%_40%/0.12)] rounded-2xl flex items-center justify-center mb-6 border border-[hsl(35_40%_60%/0.15)]"
+              >
                 <Mic className="w-6 h-6 text-[hsl(35_55%_65%)]" />
-              </div>
+              </motion.div>
               <h3 className="font-display text-xl font-semibold text-white/90 mb-3">Voice & Feeling</h3>
               <p className="text-muted-foreground font-light leading-relaxed text-sm">
                 Hear your companion speak in their own voice — soft, warm, and unmistakably theirs.
               </p>
             </motion.div>
+
           </div>
         </div>
       </section>
