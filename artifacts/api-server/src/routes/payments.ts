@@ -20,38 +20,48 @@ router.post("/payments/purchase", async (req: Request, res: Response) => {
 });
 
 // ── GET /api/payments/packages ────────────────────────────────────────────────
-// Returns the available ember packages. Prices are placeholders.
+// Returns the available Ember packages.
 
 router.get("/payments/packages", (req: Request, res: Response) => {
   res.json({
     packages: [
       {
-        id: "embers_50",
+        id: "embers_500",
         name: "Spark",
-        embers: 50,
-        price: 4.99,
-        priceDisplay: "$4.99",
+        embers: 500,
+        price: 14.99,
+        priceDisplay: "$14.99",
         popular: false,
         description: "Great for a quick session",
       },
       {
-        id: "embers_150",
+        id: "embers_1500",
         name: "Flame",
-        embers: 150,
-        price: 9.99,
-        priceDisplay: "$9.99",
+        embers: 1500,
+        price: 19.99,
+        priceDisplay: "$19.99",
         popular: true,
         description: "Best value — most popular",
         badge: "Most Popular",
       },
       {
-        id: "embers_500",
+        id: "embers_4000",
         name: "Inferno",
-        embers: 500,
-        price: 24.99,
-        priceDisplay: "$24.99",
+        embers: 4000,
+        price: 39.99,
+        priceDisplay: "$39.99",
         popular: false,
         description: "For dedicated explorers",
+      },
+      {
+        id: "embers_2500_crypto",
+        name: "Crypto Pack",
+        embers: 2500,
+        price: 19.99,
+        priceDisplay: "$19.99",
+        popular: false,
+        description: "Pay with crypto — exclusive bonus",
+        badge: "Crypto",
       },
     ],
   });

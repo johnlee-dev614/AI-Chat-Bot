@@ -16,7 +16,7 @@ import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEmbers } from "@/lib/ember-context";
+import { useEmbers, EMBER_COSTS } from "@/lib/ember-context";
 
 // ── Static character profile data ─────────────────────────────────────────────
 const CHARACTER_PROFILES: Record<string, {
@@ -182,6 +182,16 @@ export function ChatView() {
       const trimmed = text.trim();
       if (!trimmed || sendState !== "idle") return;
 
+      // ── Pre-flight ember balance check ────────────────────────────────────
+      const messageCost = voiceEnabled
+        ? EMBER_COSTS.text + EMBER_COSTS.voice
+        : EMBER_COSTS.text;
+
+      if (embers !== null && embers < messageCost) {
+        setShowPaywall(true);
+        return;
+      }
+
       setLastSentContent(trimmed);
       setLastError(null);
       setSendState("sending");
@@ -200,11 +210,11 @@ export function ChatView() {
 
       sendMessage.mutate({
         characterSlug: slug,
-        data: { content: trimmed },
+        data: { content: trimmed, voice: voiceEnabled },
       });
       setContent("");
     },
-    [sendState, slug, sendMessage],
+    [sendState, slug, sendMessage, voiceEnabled, embers, setShowPaywall],
   );
 
   const handleSend = (e: React.FormEvent) => {
@@ -233,7 +243,7 @@ export function ChatView() {
   }, [voiceEnabled, stopAudio, sendState]);
 
   const isBusy = sendState !== "idle";
-  const isEmberless = embers !== null && embers <= 0;
+  const isEmberless = embers !== null && embers < EMBER_COSTS.text;
 
   const statusLabel: Record<SendState, string> = {
     idle: "",

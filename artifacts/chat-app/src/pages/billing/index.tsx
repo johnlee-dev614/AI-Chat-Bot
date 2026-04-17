@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { motion } from "framer-motion";
-import { Flame, CreditCard, Zap, Sparkles, CheckCircle, Lock, ChevronRight } from "lucide-react";
+import { Flame, CreditCard, Zap, Sparkles, CheckCircle, Lock, ChevronRight, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEmbers } from "@/lib/ember-context";
@@ -15,7 +15,10 @@ interface Package {
 }
 
 const PACKAGE_ICONS: Record<string, React.ElementType> = {
-  spark: Zap, flame: Flame, inferno: Sparkles,
+  embers_500:         Zap,
+  embers_1500:        Flame,
+  embers_4000:        Sparkles,
+  embers_2500_crypto: Coins,
 };
 
 function CardInput() {

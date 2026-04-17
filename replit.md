@@ -80,13 +80,32 @@ lib/
 
 ## Ember Paywall System
 
-Embers are Sonuria's in-app currency. Each message sent costs 1 Ember.
+Embers are Sonuria's in-app currency.
+
+### Cost Table (`EMBER_COSTS` constant — server + client stay in sync)
+| Action | Cost |
+|---|---|
+| Standard text message | 10 Embers |
+| Deep Memory Mode (reserved) | 15 Embers |
+| Voice playback (additive) | +50 Embers |
+
+Voice is opt-in per message. `voice: boolean` is sent in the request body; ElevenLabs is only called (and charged) when `voice: true`.
 
 ### Economy Rules
 - **New account**: 10 Embers granted automatically at signup (`trialUsed = true`)
-- **Cost**: 1 Ember per message sent (atomic SQL decrement, floored at 0)
-- **Freeze**: Chat input frozen when balance = 0, paywall modal shown
-- **Navbar**: Ember balance pill displayed while logged in (amber/rose color when low/empty, clickable to open paywall)
+- **Pre-flight check**: Client checks `embers < messageCost` BEFORE calling the API — paywall modal opens immediately if insufficient, no network call made
+- **Server check**: Server also validates `embers < messageCost` and returns HTTP 402 with `{ code: "insufficient_embers", required, embers }` if insufficient
+- **Deduction**: Atomic SQL decrement by exact `messageCost`, floored at 0
+- **Freeze**: Chat input frozen when balance < 10 (minimum text cost), paywall shown
+- **Live balance**: `SendMessageResponse.embers` always returns updated balance
+
+### Payment Packages
+| ID | Name | Embers | Price |
+|---|---|---|---|
+| `embers_500` | Spark | 500 | $14.99 |
+| `embers_1500` | Flame | 1,500 | $19.99 (popular) |
+| `embers_4000` | Inferno | 4,000 | $39.99 |
+| `embers_2500_crypto` | Crypto Pack | 2,500 | $19.99 |
 
 ### DB Schema
 - `users.embers` (integer, default 0) — current balance
@@ -98,12 +117,12 @@ Embers are Sonuria's in-app currency. Each message sent costs 1 Ember.
 |---|---|---|
 | `GET /api/users/balance` | ✓ | Returns `{ embers, trialUsed }` |
 | `POST /api/users/claim-starter` | ✓ | One-time 10-Ember grant (idempotent) |
-| `GET /api/payments/packages` | — | Returns purchase packages (Spark/Flame/Inferno) |
+| `GET /api/payments/packages` | — | Returns purchase packages |
 | `POST /api/payments/purchase` | ✓ | **Placeholder** — returns 503 until payment provider is wired |
 
 ### Frontend Components
-- `src/lib/ember-context.tsx` — `EmberProvider` + `useEmbers()` hook (wraps all auth'd routes)
-- `src/components/paywall/EmberModal.tsx` — Slide-up paywall modal with package selection
+- `src/lib/ember-context.tsx` — `EmberProvider` + `useEmbers()` + exported `EMBER_COSTS`
+- `src/components/paywall/EmberModal.tsx` — **Right-side slide-over drawer** (not a modal) with package selection and cost breakdown grid
 - Chat page: `isEmberless` flag drives frozen input → "Get Embers" CTA banner
 - `SendMessageResponse` includes `embers` field — balance updates live after each message
 

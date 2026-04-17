@@ -12,6 +12,13 @@ import { getCharacterBySlug, CharacterConfig } from "../config/characters";
 
 const router: IRouter = Router();
 
+// ─── Ember cost table ─────────────────────────────────────────────────────────
+export const EMBER_COSTS = {
+  text:       10,  // standard text message
+  deepMemory: 15,  // deep memory mode (replaces text cost, not additive)
+  voice:      50,  // voice audio generation (additive on top of text/deepMemory)
+} as const;
+
 // ─── Shared logger type ──────────────────────────────────────────────────────
 
 type PinoLog = {
@@ -445,10 +452,14 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     return;
   }
 
-  const { content } = parsed.data;
+  const { content, voice = false, deepMemory = false } = parsed.data;
+
+  // ── Compute cost for this message ──
+  const baseCost    = deepMemory ? EMBER_COSTS.deepMemory : EMBER_COSTS.text;
+  const messageCost = voice ? baseCost + EMBER_COSTS.voice : baseCost;
 
   req.log.info(
-    { characterSlug, userId: req.user.id, messageLen: content.length },
+    { characterSlug, userId: req.user.id, messageLen: content.length, voice, deepMemory, messageCost },
     "SendMessage: received",
   );
 
@@ -458,12 +469,13 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
     .from(usersTable)
     .where(eq(usersTable.id, req.user.id));
 
-  if (!balanceRow || balanceRow.embers <= 0) {
-    req.log.warn({ userId: req.user.id, embers: balanceRow?.embers }, "SendMessage: no embers");
+  if (!balanceRow || balanceRow.embers < messageCost) {
+    req.log.warn({ userId: req.user.id, embers: balanceRow?.embers, required: messageCost }, "SendMessage: insufficient embers");
     res.status(402).json({
       error: "Insufficient Embers",
-      code: "no_embers",
+      code: "insufficient_embers",
       embers: balanceRow?.embers ?? 0,
+      required: messageCost,
     });
     return;
   }
@@ -516,23 +528,28 @@ router.post("/chat/:characterSlug/messages", async (req: Request, res: Response)
 
   req.log.info({ aiReplyLen: aiContent.length }, "SendMessage: AI reply ready");
 
-  // ── 4. Generate voice audio (ElevenLabs, non-fatal) ──
-  const audioBase64 = await callElevenLabs(aiContent, req.log);
+  // ── 4. Generate voice audio (ElevenLabs, non-fatal) — only when requested ──
+  const audioBase64 = voice ? await callElevenLabs(aiContent, req.log) : null;
   req.log.info({ hasAudio: !!audioBase64 }, "SendMessage: ElevenLabs result");
 
-  // ── 5. Deduct 1 ember (atomic decrement, floor at 0) ──
+  // ── 5. Deduct embers (atomic, floor at 0) ──
   const [updatedUser] = await db
     .update(usersTable)
-    .set({ embers: sql`GREATEST(${usersTable.embers} - 1, 0)` })
+    .set({ embers: sql`GREATEST(${usersTable.embers} - ${messageCost}, 0)` })
     .where(eq(usersTable.id, req.user.id))
     .returning({ embers: usersTable.embers });
+
+  const modeLabel = [
+    deepMemory ? "deep memory" : "text",
+    voice ? "voice" : null,
+  ].filter(Boolean).join(" + ");
 
   await db.insert(emberTransactionsTable).values({
     id: randomUUID(),
     userId: req.user.id,
     type: "debit",
-    amount: 1,
-    description: `Chat with ${characterSlug}`,
+    amount: messageCost,
+    description: `Chat with ${characterSlug} · ${modeLabel}`,
   });
 
   const remainingEmbers = updatedUser?.embers ?? 0;

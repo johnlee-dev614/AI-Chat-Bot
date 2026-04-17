@@ -209,6 +209,8 @@ export const sendMessageBodyContentMax = 2000;
 
 export const SendMessageBody = zod.object({
   content: zod.string().min(1).max(sendMessageBodyContentMax),
+  voice: zod.boolean().optional().describe("Request audio generation for this message (costs +50 Embers on top of base cost)"),
+  deepMemory: zod.boolean().optional().describe("Enable deep memory mode (costs 15 Embers instead of 10)"),
 });
 
 export const SendMessageResponse = zod.object({

@@ -3,6 +3,13 @@ import { useAuth } from "@workspace/replit-auth-web";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
+// ── Ember cost table (keep in sync with server EMBER_COSTS) ──────────────────
+export const EMBER_COSTS = {
+  text:       10,  // standard text message
+  deepMemory: 15,  // deep memory mode
+  voice:      50,  // voice audio generation (additive)
+} as const;
+
 interface EmberContextValue {
   embers: number | null;
   isLoading: boolean;
@@ -45,7 +52,8 @@ export function EmberProvider({ children }: { children: ReactNode }) {
 
   const updateEmbers = useCallback((newBalance: number) => {
     setEmbers(newBalance);
-    if (newBalance <= 0) {
+    // Show paywall when balance falls below minimum action cost
+    if (newBalance < EMBER_COSTS.text) {
       setShowPaywall(true);
     }
   }, []);
