@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, MessageCircle, Mail, Book, Flame, Shield, CreditCard, HelpCircle } from "lucide-react";
+import {
+  ChevronDown, MessageCircle, Book, Flame, Shield, CreditCard,
+  HelpCircle, Paperclip, X, CheckCircle, Send, ChevronRight,
+  Mail,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 const FAQ_SECTIONS = [
   {
@@ -83,6 +90,16 @@ const FAQ_SECTIONS = [
   },
 ];
 
+const SUBJECT_OPTIONS = [
+  "Select a topic…",
+  "Billing or payment issue",
+  "Login or account access",
+  "Technical problem or bug",
+  "Ember or purchase question",
+  "Feature request",
+  "Other",
+];
+
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -117,7 +134,243 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function ContactForm({ onBack }: { onBack: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [email, setEmail]           = useState("");
+  const [subject, setSubject]       = useState(SUBJECT_OPTIONS[0]);
+  const [message, setMessage]       = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachErr, setAttachErr]   = useState<string | null>(null);
+  const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setAttachErr(null);
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setAttachErr("File exceeds 5 MB. Please choose a smaller image.");
+      e.target.value = "";
+      return;
+    }
+    setAttachment(file);
+  }
+
+  function removeFile() {
+    setAttachment(null);
+    setAttachErr(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!email.trim())                     errs.email   = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(email))  errs.email   = "Enter a valid email address.";
+    if (!subject || subject === SUBJECT_OPTIONS[0]) errs.subject = "Please choose a topic.";
+    if (!message.trim())                   errs.message = "Please describe your issue.";
+    return errs;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
+    setSubmitting(true);
+    // Placeholder — wire to real send when support@sonuria.com is ready
+    await new Promise(r => setTimeout(r, 1200));
+    setSubmitting(false);
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease }}
+        className="text-center py-6"
+      >
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.45, ease }}
+          className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/15 border border-primary/25 mb-5"
+        >
+          <CheckCircle className="w-7 h-7 text-primary/80" />
+        </motion.div>
+        <h3 className="text-lg font-display font-semibold text-white/90 italic mb-2">Message sent!</h3>
+        <p className="text-sm text-white/45 font-light mb-6 max-w-xs mx-auto">
+          We'll get back to you within 24 hours at <span className="text-white/65">{email}</span>.
+        </p>
+        <button
+          onClick={() => { setSubmitted(false); setEmail(""); setSubject(SUBJECT_OPTIONS[0]); setMessage(""); setAttachment(null); }}
+          className="text-xs text-primary/60 hover:text-primary/90 transition-colors font-light underline underline-offset-4"
+        >
+          Send another message
+        </button>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.form
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease }}
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
+      {/* Email */}
+      <div>
+        <label className="block text-[11px] text-white/40 uppercase tracking-widest font-light mb-2">
+          Your Email
+        </label>
+        <div className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border transition-all",
+          errors.email ? "border-rose-500/40" : "border-white/[0.07] focus-within:border-primary/40"
+        )}>
+          <Mail className="w-4 h-4 text-white/25 shrink-0" />
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="flex-1 bg-transparent text-sm text-white/90 placeholder:text-white/20 outline-none font-light"
+          />
+        </div>
+        {errors.email && <p className="mt-1.5 text-[11px] text-rose-400">{errors.email}</p>}
+      </div>
+
+      {/* Subject */}
+      <div>
+        <label className="block text-[11px] text-white/40 uppercase tracking-widest font-light mb-2">
+          Subject / Topic
+        </label>
+        <div className={cn(
+          "relative flex items-center px-4 py-3 rounded-xl bg-white/[0.04] border transition-all",
+          errors.subject ? "border-rose-500/40" : "border-white/[0.07] focus-within:border-primary/40"
+        )}>
+          <select
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            className="w-full bg-transparent text-sm text-white/90 outline-none font-light appearance-none cursor-pointer"
+            style={{ colorScheme: "dark" }}
+          >
+            {SUBJECT_OPTIONS.map(opt => (
+              <option key={opt} value={opt} style={{ background: "#1a1a2e", color: "#e5e7eb" }}>
+                {opt}
+              </option>
+            ))}
+          </select>
+          <ChevronRight className="w-4 h-4 text-white/25 shrink-0 rotate-90 pointer-events-none ml-2" />
+        </div>
+        {errors.subject && <p className="mt-1.5 text-[11px] text-rose-400">{errors.subject}</p>}
+      </div>
+
+      {/* Message */}
+      <div>
+        <label className="block text-[11px] text-white/40 uppercase tracking-widest font-light mb-2">
+          Describe Your Issue
+        </label>
+        <div className={cn(
+          "px-4 py-3 rounded-xl bg-white/[0.04] border transition-all",
+          errors.message ? "border-rose-500/40" : "border-white/[0.07] focus-within:border-primary/40"
+        )}>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            rows={5}
+            placeholder="Tell us what happened, what you expected, and any steps to reproduce the issue…"
+            className="w-full bg-transparent text-sm text-white/90 placeholder:text-white/20 outline-none font-light resize-none leading-relaxed"
+          />
+        </div>
+        {errors.message && <p className="mt-1.5 text-[11px] text-rose-400">{errors.message}</p>}
+      </div>
+
+      {/* Attachment */}
+      <div>
+        <label className="block text-[11px] text-white/40 uppercase tracking-widest font-light mb-2">
+          Attachment <span className="normal-case tracking-normal text-white/20">(optional · image · max 5 MB)</span>
+        </label>
+
+        {attachment ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.07]">
+            <Paperclip className="w-4 h-4 text-primary/60 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white/80 font-light truncate">{attachment.name}</p>
+              <p className="text-[11px] text-white/30 mt-0.5">{(attachment.size / 1024).toFixed(0)} KB</p>
+            </div>
+            <button
+              type="button"
+              onClick={removeFile}
+              className="text-white/25 hover:text-rose-400 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-dashed border-white/[0.1] text-white/35 hover:text-white/60 hover:border-white/[0.2] hover:bg-white/[0.05] transition-all duration-200"
+          >
+            <Paperclip className="w-4 h-4 shrink-0" />
+            <span className="text-sm font-light">Attach a screenshot or image…</span>
+          </button>
+        )}
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFile}
+          className="hidden"
+        />
+        {attachErr && <p className="mt-1.5 text-[11px] text-rose-400">{attachErr}</p>}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-1">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs text-white/30 hover:text-white/60 transition-colors font-light"
+        >
+          ← Back
+        </button>
+        <Button
+          type="submit"
+          variant="glow"
+          disabled={submitting}
+          className="font-light gap-2 min-w-[140px]"
+        >
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                className="inline-block w-4 h-4 border-2 border-white/30 border-t-white/80 rounded-full"
+              />
+              Sending…
+            </span>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Send Message
+            </>
+          )}
+        </Button>
+      </div>
+    </motion.form>
+  );
+}
+
 export function Help() {
+  const [showForm, setShowForm] = useState(false);
+
   return (
     <div className="min-h-screen pt-0 pb-20 bg-mesh">
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -166,27 +419,63 @@ export function Help() {
             ))}
           </div>
 
-          {/* Contact Card */}
+          {/* Contact Card / Form */}
           <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.35, ease: "easeOut" }}
-            className="glass-panel rounded-3xl p-8 relative overflow-hidden text-center"
+            className="glass-panel rounded-3xl p-8 relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] to-transparent pointer-events-none" />
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/20 mb-4">
-              <MessageCircle className="w-6 h-6 text-primary/80" />
-            </div>
-            <h3 className="text-lg font-display font-semibold text-white/90 italic mb-2">Still need help?</h3>
-            <p className="text-sm text-white/45 font-light mb-6 max-w-sm mx-auto">
-              Our support team is here to help. Send us an email and we'll get back to you within 24 hours.
-            </p>
-            <a href="mailto:support@sonuria.com">
-              <Button variant="glow" className="font-light gap-2">
-                <Mail className="w-4 h-4" />
-                Contact Support
-              </Button>
-            </a>
+
+            <AnimatePresence mode="wait">
+              {showForm ? (
+                <motion.div
+                  key="form"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Form header */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center">
+                      <MessageCircle className="w-5 h-5 text-primary/80" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-display font-semibold text-white/90 italic">Contact Support</h3>
+                      <p className="text-[11px] text-white/35 font-light">We respond within 24 hours</p>
+                    </div>
+                  </div>
+                  <ContactForm onBack={() => setShowForm(false)} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="card"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-center"
+                >
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/20 mb-4">
+                    <MessageCircle className="w-6 h-6 text-primary/80" />
+                  </div>
+                  <h3 className="text-lg font-display font-semibold text-white/90 italic mb-2">Still need help?</h3>
+                  <p className="text-sm text-white/45 font-light mb-6 max-w-sm mx-auto">
+                    Our support team is here for you. Send us a message and we'll get back to you within 24 hours.
+                  </p>
+                  <Button
+                    variant="glow"
+                    className="font-light gap-2"
+                    onClick={() => setShowForm(true)}
+                  >
+                    <Mail className="w-4 h-4" />
+                    Contact Support
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.section>
         </motion.div>
       </div>
