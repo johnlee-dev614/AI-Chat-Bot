@@ -48,6 +48,8 @@ export const SignupBody = zod.object({
   email: zod.string().email().min(1),
   password: zod.string().min(signupBodyPasswordMin),
   displayName: zod.string().min(1).max(signupBodyDisplayNameMax),
+  acceptedTerms: zod.boolean(),
+  confirmedTerms: zod.boolean(),
 });
 
 export const SignupResponse = zod.object({

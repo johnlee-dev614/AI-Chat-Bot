@@ -67,7 +67,7 @@ export function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.64, duration: 0.8, ease }}
           >
-            <Link href="/characters">
+            <Link href="/signup">
               <motion.div
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.97 }}
@@ -79,7 +79,7 @@ export function Home() {
                   size="lg"
                   className="text-sm font-light tracking-widest uppercase h-13 px-10 rounded-full shadow-[0_0_40px_-8px_hsl(var(--primary)/0.5)]"
                 >
-                  Meet Your Companions
+                  Create Account
                 </Button>
               </motion.div>
             </Link>

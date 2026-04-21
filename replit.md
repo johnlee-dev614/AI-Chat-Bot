@@ -65,11 +65,13 @@ lib/
 - `/characters/:slug` — Individual character profile
 - `/chat/:character` — Chat interface with sidebar, voice toggle, conversation starters
 - `/login` — Login page
+- `/signup` — Create account page, opens the signup tab by default
 - `/account` — User account (favorites grid, stats)
 
 ## Special Features
 
 - **Age gate + AI disclaimer**: Full-screen gate on first visit, stored in localStorage
+- **Account signup consent**: Signup requires two Terms of Service confirmation checkboxes on the client and server
 - **Optimistic chat UI**: User message appears immediately; `sending → thinking → speaking` status states
 - **Retry on error**: Inline retry button when AI response fails
 - **Favorites**: Heart characters, persisted per user in DB

@@ -16,9 +16,9 @@ function getReturnTo(): string {
 
 export function Login() {
   const { isAuthenticated, refetchUser } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
-  const [tab, setTab] = useState<Tab>("login");
+  const [tab, setTab] = useState<Tab>(() => (window.location.pathname.endsWith("/signup") ? "signup" : "login"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,12 +31,21 @@ export function Login() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedTerms, setConfirmedTerms] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       setLocation(getReturnTo());
     }
   }, [isAuthenticated, setLocation]);
+
+  useEffect(() => {
+    if (location === "/signup") {
+      setTab("signup");
+      setError(null);
+    }
+  }, [location]);
 
   function switchTab(t: Tab) {
     setTab(t);
@@ -86,6 +95,10 @@ export function Login() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    if (!acceptedTerms || !confirmedTerms) {
+      setError("Please accept the Terms of Service before creating your account.");
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
@@ -97,6 +110,8 @@ export function Login() {
           email: signupEmail,
           password: signupPassword,
           displayName: signupDisplayName,
+          acceptedTerms,
+          confirmedTerms,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -194,11 +209,43 @@ export function Login() {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
               />
             </div>
+            <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
+                />
+                <span>
+                  I have read and accept Sonuria's{" "}
+                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                  .
+                </span>
+              </label>
+              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={confirmedTerms}
+                  onChange={(e) => setConfirmedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
+                />
+                <span>
+                  I understand that creating an account means I agree to follow Sonuria's{" "}
+                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                  .
+                </span>
+              </label>
+            </div>
             <Button
               type="submit"
               variant="glow"
               size="lg"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !acceptedTerms || !confirmedTerms}
               className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
             >
               {isSubmitting ? "Signing in…" : "Sign In"}

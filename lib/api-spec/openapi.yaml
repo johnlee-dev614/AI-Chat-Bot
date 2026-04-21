@@ -428,7 +428,7 @@ components:
 
     SignupRequest:
       type: object
-      required: [email, password, displayName]
+      required: [email, password, displayName, acceptedTerms, confirmedTerms]
       properties:
         email:
           type: string
@@ -441,6 +441,10 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        acceptedTerms:
+          type: boolean
+        confirmedTerms:
+          type: boolean
 
     LoginRequest:
       type: object

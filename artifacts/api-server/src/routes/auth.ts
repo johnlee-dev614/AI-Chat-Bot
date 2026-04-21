@@ -59,7 +59,12 @@ router.post("/auth/signup", async (req: Request, res: Response) => {
     return;
   }
 
-  const { email, password, displayName } = parsed.data;
+  const { email, password, displayName, acceptedTerms, confirmedTerms } = parsed.data;
+  if (!acceptedTerms || !confirmedTerms) {
+    res.status(400).json({ error: "You must accept the Terms of Service to create an account." });
+    return;
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check for duplicate email
