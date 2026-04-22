@@ -209,43 +209,11 @@ export function Login() {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
               />
             </div>
-            <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
-                />
-                <span>
-                  I have read and accept Sonuria's{" "}
-                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
-                    Terms of Service
-                  </a>
-                  .
-                </span>
-              </label>
-              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
-                <input
-                  type="checkbox"
-                  checked={confirmedTerms}
-                  onChange={(e) => setConfirmedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
-                />
-                <span>
-                  I understand that creating an account means I agree to follow Sonuria's{" "}
-                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
-                    Terms of Service
-                  </a>
-                  .
-                </span>
-              </label>
-            </div>
             <Button
               type="submit"
               variant="glow"
               size="lg"
-              disabled={isSubmitting || !acceptedTerms || !confirmedTerms}
+              disabled={isSubmitting}
               className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
             >
               {isSubmitting ? "Signing in…" : "Sign In"}
@@ -310,25 +278,49 @@ export function Login() {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
               />
             </div>
+            <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
+                />
+                <span>
+                  I have read and accept Sonuria's{" "}
+                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                  .
+                </span>
+              </label>
+              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={confirmedTerms}
+                  onChange={(e) => setConfirmedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
+                />
+                <span>
+                  I understand that creating an account means I agree to follow Sonuria's{" "}
+                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                  .
+                </span>
+              </label>
+            </div>
             <Button
               type="submit"
               variant="glow"
               size="lg"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !acceptedTerms || !confirmedTerms}
               className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
             >
               {isSubmitting ? "Creating account…" : "Create Account"}
             </Button>
           </form>
         )}
-
-        <p className="text-xs text-muted-foreground/35 font-light mt-6 text-center">
-          By continuing, you agree to our{" "}
-          <a href="/terms" className="underline underline-offset-2 hover:text-muted-foreground/60 transition-colors">
-            Terms of Service
-          </a>{" "}
-          and Privacy Policy.
-        </p>
       </div>
     </div>
   );
