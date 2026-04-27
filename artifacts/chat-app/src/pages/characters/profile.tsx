@@ -1,4 +1,5 @@
-import { useRoute, Link } from "wouter";
+import { useState } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { useGetCharacter, useGetFavorites, useAddFavorite, useRemoveFavorite } from "@workspace/api-client-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { AuthGateModal } from "@/components/shared/auth-gate-modal";
 
 export function CharacterProfile() {
   const [, params] = useRoute("/characters/:slug");
@@ -17,7 +19,10 @@ export function CharacterProfile() {
     query: { enabled: !!slug },
   });
 
-  const { isAuthenticated, login } = useAuth();
+  const [authGateOpen, setAuthGateOpen] = useState(false);
+  const [, navigate] = useLocation();
+
+  const { isAuthenticated } = useAuth();
   const { data: favoritesData } = useGetFavorites({ query: { enabled: isAuthenticated } });
   const isFavorite = favoritesData?.favorites?.includes(slug);
 
@@ -34,11 +39,19 @@ export function CharacterProfile() {
   const toggleFavorite = () => {
     if (!isAuthenticated) {
       toast({ title: "Sign in required", description: "Please sign in to save favorites." });
-      login();
+      setAuthGateOpen(true);
       return;
     }
     if (isFavorite) removeFav.mutate({ characterSlug: slug });
     else addFav.mutate({ characterSlug: slug });
+  };
+
+  const enterRoom = () => {
+    if (!isAuthenticated) {
+      setAuthGateOpen(true);
+      return;
+    }
+    navigate(`/chat/${slug}`);
   };
 
   if (isLoading)
@@ -123,14 +136,13 @@ export function CharacterProfile() {
                   >
                     <Heart className={cn("w-4 h-4", isFavorite && "fill-current")} />
                   </button>
-                  <Link href={`/chat/${character.slug}`}>
-                    <Button
-                      variant="glow"
-                      className="gap-2 font-light tracking-wide rounded-2xl shadow-[0_0_25px_-6px_hsl(var(--primary)/0.5)]"
-                    >
-                      <MessageCircle className="w-4 h-4" /> Enter Room
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="glow"
+                    onClick={enterRoom}
+                    className="gap-2 font-light tracking-wide rounded-2xl shadow-[0_0_25px_-6px_hsl(var(--primary)/0.5)]"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Enter Room
+                  </Button>
                 </div>
               </div>
 
@@ -177,6 +189,12 @@ export function CharacterProfile() {
           </div>
         </motion.div>
       </div>
+
+      <AuthGateModal
+        open={authGateOpen}
+        onClose={() => setAuthGateOpen(false)}
+        characterName={character.name}
+      />
     </div>
   );
 }

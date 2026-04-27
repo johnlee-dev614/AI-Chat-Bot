@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -104,6 +104,9 @@ function AppContent() {
           <Route path="/terms" component={Terms} />
           <Route path="/aup" component={Aup} />
           <Route path="/privacy" component={Privacy} />
+          <Route path="/chat/:slug">
+            {(params) => <Redirect to={`/characters/${params.slug}`} />}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>
