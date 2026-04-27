@@ -23,6 +23,7 @@ import type {
   ErrorEnvelope,
   GetChatHistory200,
   GetFavorites200,
+  GetRecentChats200,
   GetTransactionsResponse,
   HealthStatus,
   ListCharacters200,
@@ -1294,4 +1295,75 @@ export function useGetTransactions<
   const q = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
   q.queryKey = queryKey;
   return q;
+}
+
+/**
+ * @summary Get the current user's most recently chatted characters
+ */
+export const getGetRecentChatsUrl = () => {
+  return `/api/users/recent-chats`;
+};
+
+export const getRecentChats = async (
+  options?: RequestInit,
+): Promise<GetRecentChats200> => {
+  return customFetch<GetRecentChats200>(getGetRecentChatsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetRecentChatsQueryKey = () => {
+  return [`/api/users/recent-chats`] as const;
+};
+
+export const getGetRecentChatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecentChats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRecentChats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRecentChatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecentChats>>> = ({
+    signal,
+  }) => getRecentChats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRecentChats>>,
+    TError,
+    TData
+  >;
+};
+
+export type GetRecentChatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecentChats>>
+>;
+export type GetRecentChatsQueryError = ErrorType<unknown>;
+
+export function useGetRecentChats<
+  TData = Awaited<ReturnType<typeof getRecentChats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRecentChats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRecentChatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
 }

@@ -171,3 +171,7 @@ export interface UserProfile {
   displayName: string | null;
   username: string | null;
 }
+
+export interface GetRecentChats200 {
+  recentChats: string[];
+}

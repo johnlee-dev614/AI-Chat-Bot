@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, favoritesTable, messagesTable, usersTable, emberTransactionsTable } from "@workspace/db";
-import { eq, and, countDistinct, desc } from "drizzle-orm";
+import { eq, and, countDistinct, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
   GetFavoritesResponse,
@@ -13,6 +13,7 @@ import {
   UpdateProfileResponse,
   GetTransactionsResponse,
   GetProfileResponse,
+  GetRecentChatsResponse,
 } from "@workspace/api-zod";
 
 const STARTER_PACK_EMBERS = 10;
@@ -141,6 +142,27 @@ router.post("/users/claim-starter", async (req: Request, res: Response) => {
       message: `Welcome! ${STARTER_PACK_EMBERS} Embers added to your account.`,
     }),
   );
+});
+
+// ── GET /api/users/recent-chats ───────────────────────────────────────────────
+// Returns the user's most recently chatted character slugs (up to 3), ordered
+// by the timestamp of their last message in each conversation.
+router.get("/users/recent-chats", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const rows = await db
+    .select({ characterSlug: messagesTable.characterSlug })
+    .from(messagesTable)
+    .where(eq(messagesTable.userId, req.user.id))
+    .groupBy(messagesTable.characterSlug)
+    .orderBy(desc(sql`MAX(${messagesTable.createdAt})`))
+    .limit(3);
+
+  const recentChats = rows.map((r) => r.characterSlug);
+  res.json(GetRecentChatsResponse.parse({ recentChats }));
 });
 
 // ── GET /api/users/profile ─────────────────────────────────────────────────────

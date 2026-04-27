@@ -381,3 +381,9 @@ export const GetProfileResponse = zod.object({
   displayName: zod.string().nullable(),
   username: zod.string().nullable(),
 });
+
+// ── Recent chats ──────────────────────────────────────────────────────────────
+
+export const GetRecentChatsResponse = zod.object({
+  recentChats: zod.array(zod.string()),
+});
