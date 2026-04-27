@@ -15,7 +15,7 @@ export function Footer() {
           <Link href="/characters" className="hover:text-white/90 transition-colors duration-300">Directory</Link>
           <Link href="/terms" className="hover:text-white/90 transition-colors duration-300">Terms</Link>
           <Link href="/aup" className="hover:text-white/90 transition-colors duration-300">Acceptable Use</Link>
-          <a href="#" className="hover:text-white/90 transition-colors duration-300">Privacy</a>
+          <Link href="/privacy" className="hover:text-white/90 transition-colors duration-300">Privacy</Link>
         </div>
       </div>
     </footer>

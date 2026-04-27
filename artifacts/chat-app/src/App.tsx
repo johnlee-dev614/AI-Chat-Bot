@@ -25,6 +25,7 @@ import { Billing } from "@/pages/billing";
 import { Login } from "@/pages/login";
 import { Terms } from "@/pages/terms";
 import { Aup } from "@/pages/aup";
+import { Privacy } from "@/pages/privacy";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -78,6 +79,7 @@ function AppContent() {
                   <Route path="/billing" component={Billing} />
                   <Route path="/terms" component={Terms} />
                   <Route path="/aup" component={Aup} />
+                  <Route path="/privacy" component={Privacy} />
                   <Route component={NotFound} />
                 </Switch>
               </div>
@@ -101,6 +103,7 @@ function AppContent() {
           <Route path="/signup" component={Login} />
           <Route path="/terms" component={Terms} />
           <Route path="/aup" component={Aup} />
+          <Route path="/privacy" component={Privacy} />
           <Route component={NotFound} />
         </Switch>
       </main>
