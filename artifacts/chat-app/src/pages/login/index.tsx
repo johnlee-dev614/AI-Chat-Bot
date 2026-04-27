@@ -33,6 +33,7 @@ export function Login() {
   const [signupConfirm, setSignupConfirm] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [confirmedTerms, setConfirmedTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -95,8 +96,8 @@ export function Login() {
       setError("Password must be at least 8 characters.");
       return;
     }
-    if (!acceptedTerms || !confirmedTerms) {
-      setError("Please accept the Terms of Service before creating your account.");
+    if (!acceptedTerms || !confirmedTerms || !confirmedAge) {
+      setError("Please check all required boxes before creating your account.");
       return;
     }
     setIsSubmitting(true);
@@ -302,11 +303,26 @@ export function Login() {
                   className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
                 />
                 <span>
-                  I understand that creating an account means I agree to follow Sonuria's{" "}
-                  <a href="/terms" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
-                    Terms of Service
+                  I have read and agree to Sonuria's{" "}
+                  <a href="/privacy" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Privacy Policy
+                  </a>
+                  {" "}and{" "}
+                  <a href="/aup" className="text-primary/80 underline underline-offset-2 hover:text-primary transition-colors">
+                    Acceptable Use Policy
                   </a>
                   .
+                </span>
+              </label>
+              <label className="flex items-start gap-3 text-sm text-muted-foreground/70 font-light leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={confirmedAge}
+                  onChange={(e) => setConfirmedAge(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-primary"
+                />
+                <span>
+                  I confirm that I am at least <strong className="text-white/70 font-medium">18 years of age</strong> or older.
                 </span>
               </label>
             </div>
@@ -314,7 +330,7 @@ export function Login() {
               type="submit"
               variant="glow"
               size="lg"
-              disabled={isSubmitting || !acceptedTerms || !confirmedTerms}
+              disabled={isSubmitting || !acceptedTerms || !confirmedTerms || !confirmedAge}
               className="w-full h-12 font-light tracking-wide rounded-2xl mt-2"
             >
               {isSubmitting ? "Creating account…" : "Create Account"}
