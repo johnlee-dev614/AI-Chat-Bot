@@ -66,7 +66,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "How do I delete my account?",
-        a: "To request account deletion, please contact us at support@sonuria.com. We will permanently delete your account and all associated data within 30 days.",
+        a: "To request account deletion, please contact us at info@sonuria.com. We will permanently delete your account and all associated data within 30 days.",
       },
     ],
   },
@@ -80,7 +80,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "I forgot my password. What should I do?",
-        a: "Password reset functionality is coming soon. In the meantime, please contact support@sonuria.com for assistance with your account.",
+        a: "Password reset functionality is coming soon. In the meantime, please contact info@sonuria.com for assistance with your account.",
       },
       {
         q: "Can I use Sonuria on mobile?",
@@ -179,8 +179,15 @@ function ContactForm({ onBack }: { onBack: () => void }) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setSubmitting(true);
-    // Placeholder — wire to real send when support@sonuria.com is ready
-    await new Promise(r => setTimeout(r, 1200));
+
+    const mailSubject = encodeURIComponent(`[Sonuria Support] ${subject}`);
+    const mailBody = encodeURIComponent(
+      `From: ${email}\nTopic: ${subject}\n\n${message}`
+    );
+    window.location.href = `mailto:info@sonuria.com?subject=${mailSubject}&body=${mailBody}`;
+
+    // Brief pause so the mailto has time to trigger before we flip to success
+    await new Promise(r => setTimeout(r, 600));
     setSubmitting(false);
     setSubmitted(true);
   }
