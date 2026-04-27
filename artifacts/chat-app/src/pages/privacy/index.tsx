@@ -40,7 +40,7 @@ const sections = [
       },
       {
         label: "Account Deletion",
-        text: "You may request deletion of your account by contacting legal@sonuria.com. Certain data may be retained for a limited period to satisfy legal obligations even after account closure.",
+        text: "You may request deletion of your account by contacting info@sonuria.com. Certain data may be retained for a limited period to satisfy legal obligations even after account closure.",
       },
     ],
   },
@@ -144,7 +144,7 @@ export function Privacy() {
           transition={{ delay: 0.5, duration: 0.5 }}
           className="text-center text-xs text-muted-foreground/35 font-light mt-10"
         >
-          © 2026 Sonuria, Inc. · Registered Delaware Corporation · Questions? Contact us at legal@sonuria.com
+          © 2026 Sonuria, Inc. · Registered Delaware Corporation · Questions? Contact us at info@sonuria.com
         </motion.p>
       </div>
     </div>

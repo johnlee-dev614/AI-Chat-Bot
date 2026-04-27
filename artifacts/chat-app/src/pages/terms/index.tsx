@@ -173,7 +173,7 @@ export function Terms() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-center text-xs text-muted-foreground/35 font-light mt-10"
         >
-          Questions? Contact us at legal@sonuria.com · Sonuria, Inc., a Delaware Corporation.
+          Questions? Contact us at info@sonuria.com · Sonuria, Inc., a Delaware Corporation.
         </motion.p>
       </div>
     </div>

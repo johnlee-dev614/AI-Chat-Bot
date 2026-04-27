@@ -74,7 +74,7 @@ const sections = [
       },
       {
         label: "Appeals",
-        text: `If you believe your account was terminated in error, you may submit an appeal to legal@sonuria.com. All appeal decisions are final at the Company's sole discretion.`,
+        text: `If you believe your account was terminated in error, you may submit an appeal to info@sonuria.com. All appeal decisions are final at the Company's sole discretion.`,
       },
     ],
   },
@@ -165,7 +165,7 @@ export function Aup() {
           transition={{ delay: 0.6, duration: 0.5 }}
           className="text-center text-xs text-muted-foreground/35 font-light mt-10"
         >
-          Questions? Contact us at legal@sonuria.com · Ralli Inc., a Delaware Corporation.
+          Questions? Contact us at info@sonuria.com · Ralli Inc., a Delaware Corporation.
         </motion.p>
       </div>
     </div>
