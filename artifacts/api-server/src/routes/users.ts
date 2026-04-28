@@ -16,7 +16,7 @@ import {
   GetRecentChatsResponse,
 } from "@workspace/api-zod";
 
-const STARTER_PACK_EMBERS = 10;
+const STARTER_PACK_EMBERS = 50;
 
 const router: IRouter = Router();
 

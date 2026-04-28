@@ -23,7 +23,7 @@ import {
 } from "../lib/auth";
 
 const BCRYPT_ROUNDS = 12;
-const STARTER_PACK_EMBERS = 10;
+const STARTER_PACK_EMBERS = 50;
 
 const router: IRouter = Router();
 
