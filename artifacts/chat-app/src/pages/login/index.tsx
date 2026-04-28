@@ -3,8 +3,12 @@ import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { KeyRound, Mail, CheckCircle } from "lucide-react";
 
 type Tab = "login" | "signup";
+
+const FAILED_LOGIN_THRESHOLD = 7;
 
 function getReturnTo(): string {
   const params = new URLSearchParams(window.location.search);
@@ -21,6 +25,18 @@ export function Login() {
   const [tab, setTab] = useState<Tab>(() => (window.location.pathname.endsWith("/signup") ? "signup" : "login"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Failed login attempt tracking
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const showResetPrompt = failedAttempts >= FAILED_LOGIN_THRESHOLD;
+
+  // Forgot-password / request-reset panel state
+  const [showForgotPanel, setShowForgotPanel] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetDevUrl, setResetDevUrl] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -70,6 +86,10 @@ export function Login() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
+        const newFails = failedAttempts + 1;
+        setFailedAttempts(newFails);
+        // Pre-fill reset email with the email the user is trying
+        if (!resetEmail) setResetEmail(loginEmail);
         setError(data.error ?? "Login failed. Please try again.");
         return;
       }
@@ -79,6 +99,29 @@ export function Login() {
       setError("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleRequestReset(e: FormEvent) {
+    e.preventDefault();
+    if (!resetEmail) { setResetError("Please enter your email address."); return; }
+    setResetSubmitting(true);
+    setResetError(null);
+    try {
+      const res = await fetch("/api/auth/request-reset", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = (await res.json()) as { resetUrl?: string; error?: string };
+      if (!res.ok) { setResetError(data.error ?? "Something went wrong."); return; }
+      setResetSent(true);
+      if (data.resetUrl) setResetDevUrl(data.resetUrl);
+    } catch {
+      setResetError("Network error. Please try again.");
+    } finally {
+      setResetSubmitting(false);
     }
   }
 
@@ -182,7 +225,7 @@ export function Login() {
         )}
 
         {/* Login form */}
-        {tab === "login" && (
+        {tab === "login" && !showForgotPanel && (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">
@@ -210,6 +253,44 @@ export function Login() {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
               />
             </div>
+
+            {/* Forgot password link (always visible) */}
+            <div className="flex justify-end -mt-1">
+              <button
+                type="button"
+                onClick={() => { setShowForgotPanel(true); setError(null); if (loginEmail) setResetEmail(loginEmail); }}
+                className="text-xs text-primary/60 hover:text-primary/90 transition-colors font-light"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {/* Reset prompt banner after 7 failed attempts */}
+            <AnimatePresence>
+              {showResetPrompt && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-start gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/25 text-sm font-light"
+                >
+                  <KeyRound className="w-4 h-4 text-primary/70 shrink-0 mt-0.5" />
+                  <span className="text-white/75">
+                    Having trouble signing in?{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setShowForgotPanel(true); setError(null); }}
+                      className="underline underline-offset-2 text-primary/80 hover:text-primary transition-colors"
+                    >
+                      Reset your password
+                    </button>{" "}
+                    to get back in.
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <Button
               type="submit"
               variant="glow"
@@ -220,6 +301,88 @@ export function Login() {
               {isSubmitting ? "Signing in…" : "Sign In"}
             </Button>
           </form>
+        )}
+
+        {/* Forgot Password / Request Reset panel */}
+        {tab === "login" && showForgotPanel && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            {resetSent ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-6 h-6 text-primary/80" />
+                </div>
+                <h3 className="font-display text-lg font-semibold italic text-white/90 mb-2">Check your inbox</h3>
+                <p className="text-sm text-muted-foreground/60 font-light leading-relaxed">
+                  If an account with that email exists, we've sent a reset link — good for 1 hour.
+                </p>
+                {resetDevUrl && (
+                  <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-left">
+                    <p className="text-xs text-amber-300/80 font-light mb-1">Dev mode — SMTP not configured. Use this link:</p>
+                    <a
+                      href={resetDevUrl}
+                      className="text-xs text-primary/80 underline underline-offset-2 break-all"
+                    >
+                      {resetDevUrl}
+                    </a>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setShowForgotPanel(false); setResetSent(false); setResetDevUrl(null); }}
+                  className="mt-5 text-muted-foreground/60 hover:text-white/70 font-light"
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleRequestReset} className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Mail className="w-4 h-4 text-primary/60" />
+                  <h3 className="font-display text-base font-semibold italic text-white/80">Reset your password</h3>
+                </div>
+                <p className="text-xs text-muted-foreground/55 font-light leading-relaxed">
+                  Enter the email linked to your account and we'll send a reset link.
+                </p>
+                {resetError && (
+                  <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm font-light">
+                    {resetError}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs text-muted-foreground/60 font-light mb-1.5 tracking-wide uppercase">Email</label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-muted-foreground/30 font-light focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all duration-200"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="glow"
+                  size="lg"
+                  disabled={resetSubmitting}
+                  className="w-full h-11 font-light tracking-wide rounded-2xl"
+                >
+                  {resetSubmitting ? "Sending…" : "Send Reset Link"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgotPanel(false); setResetError(null); }}
+                  className="w-full text-xs text-muted-foreground/50 hover:text-white/60 transition-colors py-1 font-light"
+                >
+                  Cancel — back to Sign In
+                </button>
+              </form>
+            )}
+          </motion.div>
         )}
 
         {/* Signup form */}

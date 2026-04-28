@@ -26,6 +26,7 @@ import { Login } from "@/pages/login";
 import { Terms } from "@/pages/terms";
 import { Aup } from "@/pages/aup";
 import { Privacy } from "@/pages/privacy";
+import { ResetPassword } from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -80,6 +81,7 @@ function AppContent() {
                   <Route path="/terms" component={Terms} />
                   <Route path="/aup" component={Aup} />
                   <Route path="/privacy" component={Privacy} />
+                  <Route path="/reset-password" component={ResetPassword} />
                   <Route component={NotFound} />
                 </Switch>
               </div>
@@ -104,6 +106,7 @@ function AppContent() {
           <Route path="/terms" component={Terms} />
           <Route path="/aup" component={Aup} />
           <Route path="/privacy" component={Privacy} />
+          <Route path="/reset-password" component={ResetPassword} />
           <Route path="/chat/:slug">
             {(params) => <Redirect to={`/characters/${params.slug}`} />}
           </Route>

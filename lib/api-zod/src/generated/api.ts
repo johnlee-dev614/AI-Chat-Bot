@@ -387,3 +387,26 @@ export const GetProfileResponse = zod.object({
 export const GetRecentChatsResponse = zod.object({
   recentChats: zod.array(zod.string()),
 });
+
+// ── Password reset ────────────────────────────────────────────────────────────
+
+export const RequestPasswordResetBody = zod.object({
+  email: zod.string().email().min(1),
+});
+
+export const RequestPasswordResetResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  /** Only present when SMTP is not configured — contains the reset URL for dev use */
+  resetUrl: zod.string().optional(),
+});
+
+export const ResetPasswordBody = zod.object({
+  token: zod.string().min(1),
+  password: zod.string().min(8),
+});
+
+export const ResetPasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
